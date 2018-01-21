@@ -46,18 +46,32 @@ def raycast(point, slope, dir=0):
             yCoord = slope * xCoord + b1
             
             if math.sqrt(math.pow(xCoord - players[player]["pos"][0], 2) + math.pow(yCoord - players[player]["pos"][1], 2)) <= 0.5:
-                if dir < 0 and point[0] - xCoord > 0:
+                if dir < 0 and point[0] > xCoord:
                     collisions.append([xCoord, yCoord])
                     
-                else:
-                    if point[0] - xCoord < 0:
-                        collisions.append([xCoord, yCoord])
+                elif dir > 0 and point[0] < xCoord:
+                    collisions.append([xCoord, yCoord])
     
     
     ### PICKS CLOSEST COLLISION ###
                         
                         
-    if collisions != []:
+    if collisions == []:
+        if slope == "+inf":
+            return [point[0], 0.0]
+        elif slope == "-inf":
+            return [point[0], worldSize[1]]
+        elif slope == 0:
+            if dir < 0:
+                return [0.0, point[1]]
+            else:
+                return [worldSize[1], point[1]]
+        else:
+            if dir < 0:
+                return [0.0, point[1] - (slope * point[0])]
+            else:
+                return [worldSize[0], (worldSize[0] * slope) + (point[1] - (slope * point[0]))]
+    else:
         nearestCollision = collisions[0]
         
         for i in range(len(collisions)):
@@ -65,8 +79,6 @@ def raycast(point, slope, dir=0):
                 nearestCollision = collisions[i]
         
         return nearestCollision
-    else:
-        return None
     
 
 # This takes a set of 2 points (or trigonometric ratios) and concerts it into an angle in degrees,
@@ -195,7 +207,9 @@ def main():
         world[line] = list(world[line])
 
     del rawWorld # boop
-
+    
+    global worldSize
+    
     worldSize = [len(world), len(world[0])] # Size of the world
     
     #########################################################################################################################################################################################
