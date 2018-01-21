@@ -29,11 +29,15 @@ def raycast(point, slope, dir=0):
                 collisions.append([players[player]["pos"][0], point[1]])
                 
                 
-    elif slope == "+inf" or slope == "-inf":
+    elif slope == "+inf":
         for player in range(2, 4):
-            if point[0] <= players[player]["pos"][0] + 0.5 and point[0] >= players[player]["pos"][0] - 0.5:
+            if point[0] <= players[player]["pos"][0] + 0.5 and point[0] >= players[player]["pos"][0] - 0.5 and point[1] > players[player]["pos"][1]:
                 collisions.append([point[0], players[player]["pos"][1]])
-                
+    
+    elif slope == "-inf":
+        for player in range(2, 4):
+            if point[0] <= players[player]["pos"][0] + 0.5 and point[0] >= players[player]["pos"][0] - 0.5 and point[1] < players[player]["pos"][1]:
+                collisions.append([point[0], players[player]["pos"][1]])  
     
     #If the slope isn't undefined or 0 (99% of the time), this calculates player collisions.
     else:
