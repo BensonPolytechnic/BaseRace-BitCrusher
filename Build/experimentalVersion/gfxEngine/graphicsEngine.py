@@ -6,42 +6,72 @@ from pygame.locals import *
 
 pygame.init()
 
-# This takes a point, a slope ("+inf" for straight up and "-inf" for straight down), and a direction (-1 for towards -x, 1 for towards x, and 0 for neither) and returns the nearest intersection of that ray with a block in the world.
-# Will also probably support detection of players.
-# (unless we want to make that a different thing)
-# Does not work yet.
-def raycast(point, slope, dir=0):
-    sideDistX = 0
-    sideDistY = 0
-    deltaDistX = 0
-    deltaDistY = 0
-    stepX = 0
-    stepY = 0
-    if str(type(slope)) == "<class 'str'>":
-        pass
-    else:
-        if dir < 0:
-            stepX = -1
-            sideDistX = math.sqrt(math.pow(2, point[0] - point[0] // 1) + math.pow(2, point[1] - slope * (point[0] - point[0] // 1) + point[1]))
-            if slope < 0:
-                stepY = -1
-                sideDistY = math.sqrt(math.pow(2, point[0] - ((1 / slope) * (point[1] - point[1] // 1)) + point[0]) + math.pow(2, point[1] - (point[1] // 1)))
-                # [[point[0] // 1, slope * (point[0] - point[0] // 1) + point[1]], [(1 / slope) * (point[1] - point[1] // 1) + point[0] , point[1] // 1]]
-            elif slope > 0:
-                stepY = 1
-                sideDistY = math.sqrt(math.pow(2, point[0] - ((1 / slope) * (point[1] - ((point[1] // 1) + 1)) + point[0])) + math.pow(2, point[1] - ((point[1] // 1) + 1)))
-                # [[point[0] // 1, slope * (point[0] - point[0] // 1) + point[1]], [(1 / slope) * (point[1] - ((point[1] // 1) + 1)) + point[0], (point[1] // 1) + 1]]
-        else:
-            stepX = 1
-            sideDistX = math.sqrt(math.pow(2, point[0] - (point[0] // 1 + 1)) + math.pow(2, point[1] - (slope * (point[0] - ((point[0] // 1) + 1)) + point[1])))
-            if slope < 0:
-                stepY = -1
-                sideDistY = math.sqrt(math.pow(2, point[0] - ((1 / slope) * (point[1] - (point[1] // 1 + 1)) + point[0])) + math.pow(2, point[1] - (point[1] // 1 + 1)))
-                # [[point[0] // 1 + 1, slope * (point[0] - (point[0] // 1 + 1)) + point[1]], [(1 / slope) * (point[1] - (point[1] // 1 + 1)) + point[0] , point[1] // 1 + 1]]
-            elif slope > 0:
-                stepY = -1
-                return [[point[0] // 1 + 1, slope * (point[0] - ((point[0] // 1) + 1)) + point[1]], [(1 / slope) * (point[1] - ((point[1] // 1))) + point[0], (point[1] // 1)]]
+# Takes a position of a point in the world, and returns its position on the screen in pixels.
+def getScreenPos(pos):
+    return [int((pos[0] - cameraPos[0] + (cameraZoom / 2)) * ((scrW / cameraZoom))), int((pos[1] - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom))]
 
+# Takes a position of something on the screen in pixels, and returns its position in the world.
+def getWorldPos(pos):
+    return [(pos[0] - (scrW / 2)) / (scrW / cameraZoom), (pos[0] - (scrH / 2)) / (scrW / cameraZoom)]
+
+# This takes a point, a slope ("+inf" for straight up and "-inf" for straight down), and a direction (-1 for towards -x, 1 for towards x, and 0 for neither) and returns the nearest intersection of that ray with a block in the world.
+# Also supports collisions with players.
+# Does not work with world detection yet.
+def raycast(point, slope, dir=0):
+    collisions = []
+    
+    ### CHECKS PLAYER COLLISIONS ###
+    
+    # If the slope is undefined or 0, these two blocks perform a simplified version of the calculations.
+    if slope == 0:
+        for player in range(2, 4):
+            if point[1] <= players[player]["pos"][1] + 0.5 and point[1] >= players[player]["pos"][1] - 0.5:
+                collisions.append([players[player]["pos"][0], point[1]])
+                
+                
+    elif slope == "+inf" or slope == "-inf":
+        for player in range(2, 4):
+            if point[0] <= players[player]["pos"][0] + 0.5 and point[0] >= players[player]["pos"][0] - 0.5:
+                collisions.append([point[0], players[player]["pos"][1]])
+                
+    
+    #If the slope isn't undefined or 0 (99% of the time), this calculates player collisions.
+    else:
+        for player in range(2, 4):
+            #All of the following is based on a bunch of really annoying algebra.
+            m2 = -1 / (slope)
+            b1 = point[1] - (slope * point[0])
+            b2 = players[player]["pos"][1] - (m2 * players[player]["pos"][0])
+            xCoord = (b2 - b1) / (slope - m2)
+            yCoord = slope * xCoord + b1
+            
+            if math.sqrt(math.pow(xCoord - players[player]["pos"][0], 2) + math.pow(yCoord - players[player]["pos"][1], 2)) <= 0.5:
+                if dir < 0 and point[0] - xCoord > 0:
+                    collisions.append([xCoord, yCoord])
+                    
+                else:
+                    if point[0] - xCoord < 0:
+                        collisions.append([xCoord, yCoord])
+    
+    
+    ### PICKS CLOSEST COLLISION ###
+                        
+                        
+    if collisions != []:
+        nearestCollision = collisions[0]
+        
+        for i in range(len(collisions)):
+            if math.sqrt(math.pow(collisions[i][0] - point[0], 2) + math.pow(collisions[i][1] - point[1], 2)) < math.sqrt(math.pow(nearestCollision[0] - point[0], 2) + math.pow(nearestCollision[1] - point[1], 2)):
+                nearestCollision = collisions[i]
+        
+        return nearestCollision
+    else:
+        return None
+    
+
+# This takes a set of 2 points (or trigonometric ratios) and concerts it into an angle in degrees,
+# which makes server communication slightly less painful.
+# (when it eventually exists)
 def calcRot(point0, point1):
     if point0[0] > point1[0]:
         return ((point1[0] // point0[0]) * 90) + (((180 / math.pi) * math.atan((point0[1] - point1[1]) / (point0[0] - point1[0]))) * (-1)) + (point0[1] // point1[1]) * 360
@@ -52,11 +82,17 @@ def calcRot(point0, point1):
             return 90.0
         else:
             return 270.0
+        
+# Mildly important.
 def main():
     
     ### DISPLAY VARIABLES ###################################################################################
     
+    global scrW
+    
     scrW = pygame.display.Info().current_w # Width of the screen
+    
+    global scrH
     
     scrH = pygame.display.Info().current_h # Height of the screen
 
@@ -70,15 +106,23 @@ def main():
     
     ### CAMERA VARIABLES ###################################################################################
     
+    global cameraPos
+    
     cameraPos = [16.0, 16.0] # Position of the camera
+    
+    global cameraZoom
     
     cameraZoom = 16 # Number of blocks that can fit in the width of the screen
     
     previousZoom = 16 # DO NOT TOUCH DURING THE MAIN LOOP. Used to determine if sprites should be resized.
     
     ### PLAYER VARIABLES ###################################################################################
-
+    
+    global players
+    
     players = [{"health":100, "pos":[16.0, 16.0], "energy":100, "rotation":0}, {"health":100, "pos":[12.0, 4.0], "energy":100, "rotation":0}, {"health":100, "pos":[18.0, 29.0], "energy":100, "rotation":0}, {"health":100, "pos":[17.0, 27.0], "energy":100, "rotation":0}]
+    
+    global playerRadius
     
     playerRadius = int(scrW / (2 * cameraZoom)) # Radius of the player's body
     
@@ -96,7 +140,8 @@ def main():
     
     startTime = time.clock() # Unix time that the game was started.
     
-    global world # The world. It is a list (corresponding to columns) of lists (corresponding to rows) of numbers (corresponding to block ID's).
+    global world # The world. It is a list (corresponding to columns) of lists (corresponding to rows) of dictionaries (corresponding to block ID's).
+    
     world = []
     
     worldImport = open(os.path.join("data", "world", "world.txt"), "r") # Imports the world from a file, and stores its' lines in 'rawWorld'
@@ -357,8 +402,9 @@ def main():
                     ray = raycast(players[0]["pos"], "+inf")
                     
             else:
-                ray = raycast(players[0]["pos"], (relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]) * (-1), (mousePos[0] - relPlayerPos[0])) # This calculates the slope of the line and starting point of the ray and gets the nearest intersection.
-            
+                ray = raycast(players[0]["pos"], (relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), (mousePos[0] - relPlayerPos[0])) # This calculates the slope of the line and starting point of the ray and gets the nearest intersection.
+        else:
+            ray = None
             
         # This the important thing.
         # It renders the section of the world that's visible to the camera.
@@ -382,6 +428,10 @@ def main():
                             
                             ########## Uncomment the following line to display block positions (terrible performance): ##########
                             #window.blit(fpsDisplayFont.render("(" + str(column) + ", " + str(row) + ")", 0, (255, 0, 0)), [(column - cameraPos[0] + (cameraZoom // 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) // 2) * (scrW / cameraZoom) + (scrW / (cameraZoom * 2))])
+                            
+            if str(type(ray)) == "<class 'list'>":
+                pygame.draw.line(window, colors["blue"], getScreenPos(players[0]["pos"]), getScreenPos(ray), 4)
+            
             
             for player in players:
                 
@@ -419,7 +469,6 @@ def main():
                 else:
                     # Blits the other team
                     pygame.draw.circle(window, colors["orange"], [int((player["pos"][0] - cameraPos[0] + (cameraZoom / 2)) * ((scrW / cameraZoom))), int((player["pos"][1] - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom))], int(scrW / (2 * cameraZoom)), 0)
-                    
             
             # Framerate counter. Delete this at will.
             # (but if you're going to, get rid of 'fpsDisplayFont' and the clock as well)
