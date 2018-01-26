@@ -1,6 +1,37 @@
 # *** GRAPHICS ENGINE ***
 # This is a thing that makes pixels on a screen turn pretty colors
 
+###############################################################
+###############################################################
+###############################################################
+###############################################################
+#########                                             #########
+#########          /\  ===  ___   ____                #########
+#########          \    |  /   \  |___|  {}           #########
+#########           \   |  |   |  |                   #########
+#########          \/   |  \___/  |      {}           #########
+#########                                             #########
+#########    THIS IS A WEIRD EXPERIMENTAL VERSION     #########
+#########    IN WHICH THE FORMATTING IS GARBAGE,      #########
+#########    THERE IS NO DOCUMENTATION,               #########
+#########    THE PROGRAM IS UNOPTIMIZED,              #########
+#########    AND VARIOUS FEATURES AREN'T DONE.        #########
+#########                                             #########
+#########    THIS VERSION WILL BE DELETED FROM GIT    #########
+#########    AS SOON AS POSSIBLE. ANY CHANGES THAT    #########
+#########    ARE MADE TO THE PROGRAM SHOULD BE ON     #########
+#########    TO "gfxEngine.zip" IN BRANCH 0.0.-8      #########
+#########                                             #########
+#########          /\  ===  ___   ____                #########
+#########          \    |  /   \  |___|  {}           #########
+#########           \   |  |   |  |                   #########
+#########          \/   |  \___/  |      {}           #########
+#########                                             #########
+###############################################################
+###############################################################
+###############################################################
+###############################################################
+
 import pygame, os, time, math
 from pygame.locals import *
 
@@ -12,7 +43,7 @@ def getScreenPos(pos):
 
 # Takes a position of something on the screen in pixels, and returns its position in the world.
 def getWorldPos(pos):
-    return [(pos[0] - (scrW / 2)) / (scrW / cameraZoom), (pos[0] - (scrH / 2)) / (scrW / cameraZoom)]
+    return [((pos[0] - (scrW / 2)) / (scrW / cameraZoom)) + cameraPos[0], ((pos[1] - (scrH / 2)) / (scrW / cameraZoom)) + cameraPos[1]]
 
 # This takes a point, a slope ("+inf" for straight up and "-inf" for straight down), and a direction (-1 for towards -x, 1 for towards x, and 0 for neither) and returns the nearest intersection of that ray with a block in the world.
 # Also supports collisions with players.
@@ -114,7 +145,7 @@ def main():
 
     window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF) # The screen
     
-    colors = {"orange":[255, 128, 0], "blue":[0, 128, 255], "white":[255, 255, 255], "black":[0, 0, 0], "dark blue":[0, 64, 128], "dark orange":[128, 64, 0], "green":[0, 255, 0]} # Dictionary of colors
+    colors = {"orange":[255, 128, 0], "blue":[0, 128, 255], "white":[255, 255, 255], "black":[0, 0, 0], "dark blue":[0, 64, 128], "dark orange":[128, 64, 0], "green":[0, 255, 0], "grey":[223, 223, 223]} # Dictionary of colors
     
     fpsDisplayFont = pygame.font.Font(os.path.join("data", "fonts", "desc.ttf"), int(scrH / 50)) # Font to display the fps with. Delete this if you're removing the fps counter.
     
@@ -133,6 +164,14 @@ def main():
     previousZoom = 16 # DO NOT TOUCH DURING THE MAIN LOOP. Used to determine if sprites should be resized.
     
     ### PLAYER VARIABLES ###################################################################################
+    
+    inventory = 64
+    
+    selectionSprite = pygame.Surface([scrW / cameraZoom, scrW / cameraZoom]).convert_alpha()
+    
+    selectionSprite.fill([255, 0, 0, 255])
+    
+    selectionSprite.fill([0, 0, 0, 0], pygame.Rect([(scrW / cameraZoom) / 40, (scrW / cameraZoom) / 40], [(scrW / cameraZoom) - (scrW / cameraZoom) / 20, (scrW / cameraZoom) - (scrW / cameraZoom) / 20]))
     
     global players
     
@@ -153,8 +192,10 @@ def main():
     ### WORLD VARIABLES ###################################################################################
     
     blocks = [] # List of block types. These will be defined in a loop.
+
+    blockSprites = []
     
-    startTime = time.clock() # Unix time that the game was started.
+    startTime = time.time() # Unix time that the game was started.
     
     global world # The world. It is a list (corresponding to columns) of lists (corresponding to rows) of dictionaries (corresponding to block ID's).
     
@@ -174,12 +215,19 @@ def main():
     #########################################################################################################################################################################################
     
     ### FILLS OUT THE "BLOCKS" LIST WITH COLORED SURFACES, WHOSE INDEX CORRESPONDS TO BLOCK ID'S ###
+
+    blockSprites = []
     
     for block in range(3):
         blocks.append(pygame.Surface([scrW / cameraZoom, scrW / cameraZoom]).convert())
-    blocks[0].fill(colors["white"])
+
+    blocks[0].fill(colors["grey"])
+    blocks[0].fill(colors["white"], pygame.Rect([(scrW / cameraZoom) / 40, (scrW / cameraZoom) / 40], [(scrW / cameraZoom) - (scrW / cameraZoom) / 20, (scrW / cameraZoom) - (scrW / cameraZoom) / 20]))
     blocks[1].fill(colors["black"])
     blocks[2].fill(colors["orange"])
+
+    for sprite in blocks:
+        blockSprites.append(sprite.copy())
 
     # Placeholder block ID list:
     # 0 - Air
@@ -275,7 +323,7 @@ def main():
                     
                 elif event.button == 3: # Right click detection
                     inputSet[5] = 1
-                    
+
             elif event.type == MOUSEBUTTONUP:
                 # This sets corresponding mouse buttons in 'inputSet' to 0 if they're not being pushed.
                 if event.button == 1: # Left click detection
@@ -283,8 +331,6 @@ def main():
                     
                 elif event.button == 3: # Right click detection
                     inputSet[5] = 0
-                    
-        
         
         # Based on what keys are being pressed (WSAD, or the first four values in inputSet, respectively),
         # this changes playerDelta.
@@ -352,6 +398,13 @@ def main():
             
         elif playerDelta[1] + players[0]["pos"][1] < 0.5: # Check if the player will go outside the top edge
             playerDelta[1] = -(players[0]["pos"][1] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+        
+        
+        # Places blocks
+        if inputSet[5] == 1:
+            if world[int(getWorldPos(mousePos)[0])][int(getWorldPos(mousePos)[1])]["type"] == 0 and inventory > 0:
+                world[int(getWorldPos(mousePos)[0])][int(getWorldPos(mousePos)[1])]["type"] = 1
+                inventory -= 1
             
             
         # Changes player position by playerDelta
@@ -364,22 +417,22 @@ def main():
 
         # Determines if sprites should be resized.
         if cameraZoom != previousZoom: # Checks if the camera zoom is different
-            
+        
             playerLaserDist = int((3 * scrW) / (8 * cameraZoom)) # Scales the distance from the player's laser to the player
             
             if cameraZoom == 16: # This is for maintaining pixel-perfectness for when the camera is at default zoom.
                 
                 # Loops through the block sprites and resizes them to a perfect whole-number side-length for 1920x1080
-                for block in range(len(blocks)):
-                    blocks[block] = pygame.transform.scale(blocks[block], [scrW // 16, scrW // 16])
+                for sprite in range(len(blocks)):
+                    blockSprites[sprite] = blocks[sprite].copy()
                 # Note that if this were written in any other programming language on Earth, this would be a
                 # huge and disgusting memory leak, because the previous sprites aren't actually deleted.
                 
             else: # If the camera is no longer in the default zoom, (for quick camera pans and zoom-outs), don't bother with integer division
                 
                 #Same thing as the other loop, it just doesn't bother with integer division and rounds up to the nearest pixel.
-                for block in range(len(blocks)):
-                    blocks[block] = pygame.transform.scale(blocks[block], [int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1])
+                for sprite in range(len(blocks)):
+                    blockSprites[sprite] = pygame.transform.smoothscale(blocks[sprite].copy(), [int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1])
                     
                     
         
@@ -440,7 +493,7 @@ def main():
                             continue
                         
                         else:
-                            window.blit(blocks[world[column][row]["type"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)]) # Blit the corresponding sprite to the block type in the column and row in the relative position of the block on the screen.
+                            window.blit(blockSprites[world[column][row]["type"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)]) # Blit the corresponding sprite to the block type in the column and row in the relative position of the block on the screen.
                             # If the above line, or anything in this loop breaks, make it so I'm the one to fix it.
                             # I don't want to subject this shitshow to anyone else.
                             
@@ -460,6 +513,8 @@ def main():
                 if players.index(player) == 0:
                     # Calculates the relative player position on the screen:
                     relPlayerPos = [int((player["pos"][0] - cameraPos[0] + (cameraZoom / 2)) * ((scrW / cameraZoom))), int((player["pos"][1] - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom))]
+                    
+                    window.blit(fpsDisplayFont.render(str(inventory), 0, (255, 0, 0)), [relPlayerPos[0] + 50, relPlayerPos[1] + 50])
                     
                     # Blits the player's body to it's relative position on the screen.
                     pygame.draw.circle(window, colors["blue"], relPlayerPos, int(scrW / (2 * cameraZoom)), 0)
@@ -487,6 +542,16 @@ def main():
                 else:
                     # Blits the other team
                     pygame.draw.circle(window, colors["orange"], [int((player["pos"][0] - cameraPos[0] + (cameraZoom / 2)) * ((scrW / cameraZoom))), int((player["pos"][1] - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom))], int(scrW / (2 * cameraZoom)), 0)
+                    
+                window.blit(fpsDisplayFont.render("pos:" + str(player["pos"]), 0, (255, 0, 0)), [getScreenPos(player["pos"])[0] + 50, getScreenPos(player["pos"])[1] + 75])
+                window.blit(fpsDisplayFont.render("health: " + str(player["health"]), 0, (255, 0, 0)), [getScreenPos(player["pos"])[0] + 50, getScreenPos(player["pos"])[1] + 100])
+                window.blit(fpsDisplayFont.render("energy: " + str(player["energy"]), 0, (255, 0, 0)), [getScreenPos(player["pos"])[0] + 50, getScreenPos(player["pos"])[1] + 125])
+            
+            spritepos = getWorldPos(mousePos)
+            spritepos = [int(spritepos[0]), int(spritepos[1])]
+            spritepos = getScreenPos(spritepos)
+            
+            window.blit(selectionSprite, spritepos)
             
             # Framerate counter. Delete this at will.
             # (but if you're going to, get rid of 'fpsDisplayFont' and the clock as well)
