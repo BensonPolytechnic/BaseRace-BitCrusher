@@ -149,6 +149,8 @@ def main():
     
     fpsDisplayFont = pygame.font.Font(os.path.join("data", "fonts", "desc.ttf"), int(scrH / 50)) # Font to display the fps with. Delete this if you're removing the fps counter.
     
+    hoss = pygame.transform.scale(pygame.image.load(os.path.join("data", "hoss", "HOSS.png")).convert(), [1920, 1489]) # eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+    
     lastFrameTime = time.time() # Used to determine if the screen should update, because there's no point in rendering graphics at 800hz if your monitor only supports 60hz.
     
     ### CAMERA VARIABLES ###################################################################################
@@ -299,6 +301,11 @@ def main():
                     
                 elif event.key == K_f:
                     cameraZoom = 16
+                
+                elif event.key == K_BACKQUOTE:
+                    window.blit(hoss, [0, -204])
+                    pygame.display.flip()
+                    time.sleep(0.02)
                     
             elif event.type == KEYUP:
                 
