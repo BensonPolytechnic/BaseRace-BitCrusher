@@ -1,37 +1,6 @@
 # *** GRAPHICS ENGINE ***
 # This is a thing that makes pixels on a screen turn pretty colors
 
-###############################################################
-###############################################################
-###############################################################
-###############################################################
-#########                                             #########
-#########          /\  ===  ___   ____                #########
-#########          \    |  /   \  |___|  {}           #########
-#########           \   |  |   |  |                   #########
-#########          \/   |  \___/  |      {}           #########
-#########                                             #########
-#########    THIS IS A WEIRD EXPERIMENTAL VERSION     #########
-#########    IN WHICH THE FORMATTING IS GARBAGE,      #########
-#########    THERE IS NO DOCUMENTATION,               #########
-#########    THE PROGRAM IS UNOPTIMIZED,              #########
-#########    AND VARIOUS FEATURES AREN'T DONE.        #########
-#########                                             #########
-#########    THIS VERSION WILL BE DELETED FROM GIT    #########
-#########    AS SOON AS POSSIBLE. ANY CHANGES THAT    #########
-#########    ARE MADE TO THE PROGRAM SHOULD BE ON     #########
-#########    TO "gfxEngine.zip" IN BRANCH 0.0.-8      #########
-#########                                             #########
-#########          /\  ===  ___   ____                #########
-#########          \    |  /   \  |___|  {}           #########
-#########           \   |  |   |  |                   #########
-#########          \/   |  \___/  |      {}           #########
-#########                                             #########
-###############################################################
-###############################################################
-###############################################################
-###############################################################
-
 import pygame, os, time, math
 from pygame.locals import *
 
@@ -43,73 +12,246 @@ def getScreenPos(pos):
 
 # Takes a position of something on the screen in pixels, and returns its position in the world.
 def getWorldPos(pos):
-    return [((pos[0] - (scrW / 2)) / (scrW / cameraZoom)) + cameraPos[0], ((pos[1] - (scrH / 2)) / (scrW / cameraZoom)) + cameraPos[1]]
+    return [(pos[0] - (scrW / 2)) / (scrW / cameraZoom), (pos[0] - (scrH / 2)) / (scrW / cameraZoom)]
 
-# This takes a point, a slope ("+inf" for straight up and "-inf" for straight down), and a direction (-1 for towards -x, 1 for towards x, and 0 for neither) and returns the nearest intersection of that ray with a block in the world.
-# Also supports collisions with players.
-# Does not work with world detection yet.
-def raycast(point, slope, dir=0):
+# This takes a point, a slope ("+inf" for straight up and "-inf" for straight down), and a direction (-1 for towards -x, 1 for towards x, and 0 for neither)
+# and returns the nearest point of intersection of that ray with an object in the world, a player, or the edge of the world.
+# The variables offSetX, offSetY, xInt, yInt, stepX, and stepY show up throughout this function.
+# I'm not going to re-describe what they're doing every time they show up so I'm just going to put their description here:
+
+# xInt - Nearest vertical intersection with the world's grid.
+
+# yInt - Nearest horizontal intersection with the world's grid.
+
+# offSetX - Annoying thing used to make variables round correctly.
+
+# offSetY - Another annoying thing used to make variables round correctly.
+
+# stepX - Increments xInt[0], used to check the next position in the world for a collision.
+
+# stepY - Increments yInt[1], used to check the next position in the world for a collision.
+
+# The operation of this entire function is difficult to explain with words alone, because it's based on a bunch of complicated and annoying math.
+# If you need to know how stuff works in here, talk to me.
+def raycast(point, slope, dir=0, team=None):
     collisions = []
     
-    ### CHECKS PLAYER COLLISIONS ###
-    
-    # If the slope is undefined or 0, these two blocks perform a simplified version of the calculations.
+    # If the slope is 0, this performs a simplified version of the calculations that don't screw around with yInt.
     if slope == 0:
-        for player in range(2, 4):
-            if point[1] <= players[player]["pos"][1] + 0.5 and point[1] >= players[player]["pos"][1] - 0.5:
-                collisions.append([players[player]["pos"][0], point[1]])
-                
-                
-    elif slope == "+inf":
-        for player in range(2, 4):
-            if point[0] <= players[player]["pos"][0] + 0.5 and point[0] >= players[player]["pos"][0] - 0.5 and point[1] > players[player]["pos"][1]:
-                collisions.append([point[0], players[player]["pos"][1]])
+        
+        # Detects collisions with players.
+        # Only checks for collisions with the players on the other team.
+        for player in players:
+            if player["team"] == team:
+                continue
+            
+            elif point[1] <= player["pos"][1] + 0.5 and point[1] >= player["pos"][1] - 0.5:
+                collisions.append([player["pos"][0], point[1]])
+        
+        if dir > 0:
+            offSetX = 0
+            stepX = 1
+            xInt = [int(point[0]) + 1, point[1]]
+            
+        else:
+            offSetX = -1
+            stepX = -1
+            xInt = [int(point[0]), point[1]]
+            
+        while True:
+            if xInt[0] >= worldSize[0] + offSetX or xInt[0] <= 0:
+                collisions.append(xInt)
+                break
+            elif world[xInt[0] + offSetX][int(xInt[1])]["type"] != 0 or xInt[0] >= worldSize[0] + offSetX or xInt[0] <= 0:
+                collisions.append(xInt)
+                break
+            
+            else:
+                xInt[0] += stepX
     
+    # If the ray is pointing straight up, this performs a simplified version of the calculations that don't screw around with xInt.
+    elif slope == "+inf":
+        
+        # Detects collisions with players.
+        # Only checks for collisions with the players on the other team.
+        for player in players:
+            if player["team"] == team:
+                continue
+            
+            elif point[0] <= player["pos"][0] + 0.5 and point[0] >= player["pos"][0] - 0.5 and point[1] > player["pos"][1]:
+                collisions.append([point[0], player["pos"][1]])
+        
+        yInt = [point[0], int(point[1])]
+        
+        while True:
+            if world[int(yInt[0])][yInt[1] - 1]["type"] != 0 or yInt[1] <= 0:
+                collisions.append(yInt)
+                break
+            else:
+                yInt[1] -= 1
+    
+    # If the ray is pointing straight down, this performs a simplified version of the calculations that don't screw around with xInt.
     elif slope == "-inf":
         for player in range(2, 4):
-            if point[0] <= players[player]["pos"][0] + 0.5 and point[0] >= players[player]["pos"][0] - 0.5 and point[1] < players[player]["pos"][1]:
-                collisions.append([point[0], players[player]["pos"][1]])  
-    
-    #If the slope isn't undefined or 0 (99% of the time), this calculates player collisions.
-    else:
-        for player in range(2, 4):
-            #All of the following is based on a bunch of really annoying algebra.
-            m2 = -1 / (slope)
-            b1 = point[1] - (slope * point[0])
-            b2 = players[player]["pos"][1] - (m2 * players[player]["pos"][0])
-            xCoord = (b2 - b1) / (slope - m2)
-            yCoord = slope * xCoord + b1
+            if player["team"] == team:
+                continue
             
-            if math.sqrt(math.pow(xCoord - players[player]["pos"][0], 2) + math.pow(yCoord - players[player]["pos"][1], 2)) <= 0.5:
+            elif point[0] <= player["pos"][0] + 0.5 and point[0] >= player["pos"][0] - 0.5 and point[1] < player["pos"][1]:
+                collisions.append([point[0], player["pos"][1]])
+        
+        yInt = [point[0], int(point[1]) + 1]
+        
+        while True:
+            if yInt[1] >= worldSize[1]:
+                collisions.append(yInt)
+                break
+            elif world[int(yInt[0])][yInt[1]]["type"] != 0:
+                collisions.append(yInt)
+                break
+            else:
+                yInt[1] += 1
+    
+    #If the slope isn't undefined or 0 (99% of the time), this calculates collisions.
+    else:
+        
+        b1 = point[1] - (slope * point[0])# Useful thing, it's the y-intercept of the ray.
+        
+        #Calculates collisions with players
+        for player in players:
+            if player["team"] == team:
+                continue
+            
+            #All of the following is based on a bunch of really annoying algebra.
+            m2 = -1 / (slope) # Slope of a line that is perpendicular to the ray.
+            b2 = player["pos"][1] - (m2 * player["pos"][0]) # y-intercept of a line that is perpendicular to the ray, and passes through the center of a player.
+            xCoord = (b2 - b1) / (slope - m2) # x position of the intersection between y=m2 + b2 and y=slope + b1
+            yCoord = slope * xCoord + b1 # y position of the intersection between y=m2 + b2 and y=slope + b1
+            
+            # Checks if the intersection between the lines is within the player's body.
+            if math.sqrt(math.pow(xCoord - player["pos"][0], 2) + math.pow(yCoord - player["pos"][1], 2)) <= 0.5:
+                
+                # Makes sure that the intersection is on the correct side of the entire fucking universe.
                 if dir < 0 and point[0] > xCoord:
                     collisions.append([xCoord, yCoord])
                     
                 elif dir > 0 and point[0] < xCoord:
                     collisions.append([xCoord, yCoord])
-    
-    
+        
+        # everything is pain
+        # Sets up a bunch of stuff.
+        # I didn't even understand how this works when I made it.
+        if slope > 0:
+            if dir > 0:
+                stepX = 1
+                stepY = 1
+                xInt = [int(point[0]) + 1, slope * (int(point[0]) + 1) + b1]
+                yInt = [(((int(point[1]) + 1) - point[1]) / slope) + point[0], int(point[1]) + 1]
+                offSetX = 0
+                offSetY = 0
+                
+            else:
+                stepX = -1
+                stepY = -1
+                xInt = [int(point[0]), slope * (int(point[0])) + b1]
+                yInt = [(((int(point[1])) - point[1]) / slope) + point[0], int(point[1])]
+                offSetX = -1
+                offSetY = -1
+                
+        else:
+            if dir > 0:
+                stepX = 1
+                stepY = -1
+                xInt = [int(point[0]) + 1, slope * (int(point[0]) + 1) + b1]
+                yInt = [(((int(point[1])) - point[1]) / slope) + point[0], int(point[1])]
+                offSetX = 0
+                offSetY = -1
+                
+            else:
+                stepX = -1
+                stepY = 1
+                xInt = [int(point[0]), slope * (int(point[0])) + b1]
+                yInt = [(((int(point[1]) + 1) - point[1]) / slope) + point[0], int(point[1]) + 1]
+                offSetX = -1
+                offSetY = 0
+        
+        # This loops through the world, checking for collisions with blocks.
+        while True:
+            
+            # Checks if xInt is closer to 'point' than yInt.
+            # If it is, this does the math for checking if xInt is a collision.
+            if math.sqrt(math.pow(point[0] - xInt[0], 2) + math.pow(point[1] - xInt[1], 2)) <= math.sqrt(math.pow(point[0] - yInt[0], 2) + math.pow(point[1] - yInt[1], 2)):
+                
+                # Checks if xInt is outside the world, and exits the loop if it is.
+                if xInt[0] >= worldSize[0] or xInt[1] >= worldSize[1] or xInt[0] <= 0 or xInt[1] <= 0:
+                    collisions.append(xInt)
+                    break
+                
+                else:
+                    # This checks if xInt is intersecting with a block in the world.
+                    if world[int(xInt[0]) + offSetX][int(xInt[1])]["type"] != 0:
+                        collisions.append(xInt)
+                        break
+                    
+                    else:
+                        # If xInt is neither outside the world nor a block in the world, where ever it just was is assumed to be air and the loop continues on.
+                        xInt = [xInt[0] + stepX, xInt[1] + slope * stepX]
+            
+            #If xInt is not closer than yInt, this determines if yInt is a collision.
+            else:
+                # Checks if yInt is outside the world, and exits the loop if it is.
+                if yInt[0] >= worldSize[0] or yInt[1] >= worldSize[1] or yInt[0] <= 0 or yInt[1] <= 0:
+                    collisions.append(yInt)
+                    break
+                
+                else:
+                    # This checks if yInt is intersecting with a block in the world.
+                    if world[int(yInt[0])][int(yInt[1]) + offSetY]["type"] != 0:
+                        collisions.append(yInt)
+                        break
+                    
+                    else:
+                        # If yInt is neither outside the world nor a block in the world, where ever it just was is assumed to be air and the loop continues on.
+                        yInt = [yInt[0] + 1 / (slope * stepY), yInt[1] + stepY]
+            
+            
     ### PICKS CLOSEST COLLISION ###
                         
-                        
+    # If there are no collisions, this assumes that the ray went off the world but was not detected.
+    # Calculates and returns the intersection of the ray with the edge of the world.
     if collisions == []:
+        
+        # If the ray is straight up, do a really simple calculation.
         if slope == "+inf":
             return [point[0], 0.0]
+        
+        # If the ray is straight down, do a really simple calculation.
         elif slope == "-inf":
             return [point[0], worldSize[1]]
+        
+        # If the ray is horizontal, do another simple calculation.
         elif slope == 0:
             if dir < 0:
                 return [0.0, point[1]]
+            
             else:
                 return [worldSize[1], point[1]]
+        
+        # Otherwise, do stuff with math. 
         else:
             if dir < 0:
-                return [0.0, point[1] - (slope * point[0])]
+                return [0.0, point[1] - (slope * point[0])] # This mess is derived from the point-slope equation for a line.
+            
             else:
-                return [worldSize[0], (worldSize[0] * slope) + (point[1] - (slope * point[0]))]
+                return [worldSize[0], (worldSize[0] * slope) + (point[1] - (slope * point[0]))] # This mess is also derived from the point-slope equation for a line.
+    
+    #If there are collisions that happened, this finds which one is closest.
     else:
         nearestCollision = collisions[0]
         
+        # Loops through 'collisions' and finds the nearest one.
         for i in range(len(collisions)):
+            
+            # Checks if the next collision in the list is closer than the current nearest collision.
             if math.sqrt(math.pow(collisions[i][0] - point[0], 2) + math.pow(collisions[i][1] - point[1], 2)) < math.sqrt(math.pow(nearestCollision[0] - point[0], 2) + math.pow(nearestCollision[1] - point[1], 2)):
                 nearestCollision = collisions[i]
         
@@ -149,8 +291,6 @@ def main():
     
     fpsDisplayFont = pygame.font.Font(os.path.join("data", "fonts", "desc.ttf"), int(scrH / 50)) # Font to display the fps with. Delete this if you're removing the fps counter.
     
-    hoss = pygame.transform.scale(pygame.image.load(os.path.join("data", "hoss", "HOSS.png")).convert(), [1920, 1489]) # eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-    
     lastFrameTime = time.time() # Used to determine if the screen should update, because there's no point in rendering graphics at 800hz if your monitor only supports 60hz.
     
     ### CAMERA VARIABLES ###################################################################################
@@ -167,17 +307,9 @@ def main():
     
     ### PLAYER VARIABLES ###################################################################################
     
-    inventory = 64
-    
-    selectionSprite = pygame.Surface([scrW / cameraZoom, scrW / cameraZoom]).convert_alpha()
-    
-    selectionSprite.fill([255, 0, 0, 255])
-    
-    selectionSprite.fill([0, 0, 0, 0], pygame.Rect([(scrW / cameraZoom) / 40, (scrW / cameraZoom) / 40], [(scrW / cameraZoom) - (scrW / cameraZoom) / 20, (scrW / cameraZoom) - (scrW / cameraZoom) / 20]))
-    
     global players
     
-    players = [{"health":100, "pos":[16.0, 16.0], "energy":100, "rotation":0}, {"health":100, "pos":[12.0, 4.0], "energy":100, "rotation":0}, {"health":100, "pos":[18.0, 29.0], "energy":100, "rotation":0}, {"health":100, "pos":[17.0, 27.0], "energy":100, "rotation":0}]
+    players = [{"team":"blue", "health":100, "pos":[16.0, 16.0], "energy":100, "rotation":[0, 0], "isShooting":False}, {"team":"blue", "health":100, "pos":[12.0, 4.0], "energy":100, "rotation":[-0.5, 1], "isShooting":False}, {"team":"orange", "health":100, "pos":[18.0, 29.0], "energy":100, "rotation":[5.1, 1], "isShooting":False}, {"team":"orange", "health":100, "pos":[18.0, 27.0], "energy":100, "rotation":[2.3, -1], "isShooting":True}]
     
     global playerRadius
     
@@ -301,11 +433,6 @@ def main():
                     
                 elif event.key == K_f:
                     cameraZoom = 16
-                
-                elif event.key == K_BACKQUOTE:
-                    window.blit(hoss, [0, -204])
-                    pygame.display.flip()
-                    time.sleep(0.02)
                     
             elif event.type == KEYUP:
                 
@@ -405,13 +532,6 @@ def main():
             
         elif playerDelta[1] + players[0]["pos"][1] < 0.5: # Check if the player will go outside the top edge
             playerDelta[1] = -(players[0]["pos"][1] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
-        
-        
-        # Places blocks
-        if inputSet[5] == 1:
-            if world[int(getWorldPos(mousePos)[0])][int(getWorldPos(mousePos)[1])]["type"] == 0 and inventory > 0:
-                world[int(getWorldPos(mousePos)[0])][int(getWorldPos(mousePos)[1])]["type"] = 1
-                inventory -= 1
             
             
         # Changes player position by playerDelta
@@ -439,9 +559,10 @@ def main():
                 
                 #Same thing as the other loop, it just doesn't bother with integer division and rounds up to the nearest pixel.
                 for sprite in range(len(blocks)):
-                    blockSprites[sprite] = pygame.transform.smoothscale(blocks[sprite].copy(), [int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1])
+                    blockSprites[sprite] = pygame.transform.scale(blocks[sprite].copy(), [int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1])
                     
-                    
+        
+        # If you screw with the following line, all of the sprites will be resized every single frame even if they don't have to be.
         
         #///CAUTION///CAUTION///CAUTION///CAUTION
         previousZoom = cameraZoom# DO NOT TOUCH
@@ -468,21 +589,28 @@ def main():
             window.fill(colors["white"]) # Fill the screen with white (or whatever we decide to make the color of air in the future), so there aren't weird graphical artifacts.
         
         
-        # This is what will draw the laser when the player clicks. Not working yet.
+        # Checks if the mouse is being clicked
         if inputSet[4] == 1:
+            players[0]["isShooting"] = True
             
-            if mousePos[0] == relPlayerPos[0]: # Check if the mouse is directly above or below the player
-                
-                if mousePos[1] > relPlayerPos[1]: # Check if the mouse is directly above the player
-                    ray = raycast(players[0]["pos"], "-inf")
-                    
-                else: # Catch if the mouse is directly below the player
-                    ray = raycast(players[0]["pos"], "+inf")
-                    
-            else:
-                ray = raycast(players[0]["pos"], (relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), (mousePos[0] - relPlayerPos[0])) # This calculates the slope of the line and starting point of the ray and gets the nearest intersection.
         else:
-            ray = None
+            players[0]["isShooting"] = False
+            
+            
+##        if inputSet[4] == 1:
+##            
+##            if mousePos[0] == relPlayerPos[0]: # Check if the mouse is directly above or below the player
+##                
+##                if mousePos[1] > relPlayerPos[1]: # Check if the mouse is directly above the player
+##                    ray = raycast(players[0]["pos"], "-inf")
+##                    
+##                else: # Catch if the mouse is directly below the player
+##                    ray = raycast(players[0]["pos"], "+inf")
+##                    
+##            else:
+##                ray = raycast(players[0]["pos"], (relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), (mousePos[0] - relPlayerPos[0])) # This calculates the slope of the line and starting point of the ray and gets the nearest intersection.
+##        else:
+##            ray = None
             
         # This the important thing.
         # It renders the section of the world that's visible to the camera.
@@ -507,11 +635,13 @@ def main():
                             ########## Uncomment the following line to display block positions (terrible performance): ##########
                             #window.blit(fpsDisplayFont.render("(" + str(column) + ", " + str(row) + ")", 0, (255, 0, 0)), [(column - cameraPos[0] + (cameraZoom // 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) // 2) * (scrW / cameraZoom) + (scrW / (cameraZoom * 2))])
                             
-            if str(type(ray)) == "<class 'list'>":
-                pygame.draw.line(window, colors["blue"], getScreenPos(players[0]["pos"]), getScreenPos(ray), 4)
+            for player in players:
+                if player["isShooting"]:
+                    pygame.draw.line(window, colors[player["team"]], getScreenPos(player["pos"]), getScreenPos(raycast(player["pos"], player["rotation"][0], player["rotation"][1], player["team"])), 4)
             
             
             for player in players:
+                    
                 
                 # If there was a better way of doing this, I would.
                 # I'm sorry.
@@ -521,47 +651,28 @@ def main():
                     # Calculates the relative player position on the screen:
                     relPlayerPos = [int((player["pos"][0] - cameraPos[0] + (cameraZoom / 2)) * ((scrW / cameraZoom))), int((player["pos"][1] - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom))]
                     
-                    window.blit(fpsDisplayFont.render(str(inventory), 0, (255, 0, 0)), [relPlayerPos[0] + 50, relPlayerPos[1] + 50])
-                    
                     # Blits the player's body to it's relative position on the screen.
                     pygame.draw.circle(window, colors["blue"], relPlayerPos, int(scrW / (2 * cameraZoom)), 0)
                     
                     # Blits the small, darker-colored circle that shows where the player is facing.
                     if mousePos[0] - relPlayerPos[0] > 0: # Checks if the mouse is on the right side of the screen
-                        relAngle = math.atan((mousePos[1] - relPlayerPos[1]) / (mousePos[0] - relPlayerPos[0])) # Calculates the relative angle between the mouse and the relative position of the player on the screen
-                        pygame.draw.circle(window, colors["dark blue"], [int(math.cos(relAngle) * playerLaserDist) + relPlayerPos[0], int(math.sin(relAngle) * playerLaserDist) + relPlayerPos[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+                        player["rotation"] = [(relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), 1]
                         
                     elif mousePos[0] - relPlayerPos[0] < 0: # Checks if the mouse is on the left side of the screen
-                        relAngle = math.atan((mousePos[1] - relPlayerPos[1]) / (mousePos[0] - relPlayerPos[0])) # Calculates the relative angle between the mouse and the relative position of the player on the screen
-                        pygame.draw.circle(window, colors["dark blue"], [int(math.cos(relAngle) * playerLaserDist) * -1 + relPlayerPos[0], int(math.sin(relAngle) * playerLaserDist) * -1 + relPlayerPos[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+                        player["rotation"] = [(relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), -1]
                         
-                    else: # Catches if the mouse is directly above or below the player
-                        
-                        if mousePos[1] - relPlayerPos[1] > 0: # Checks if the mouse is above the player
-                            pygame.draw.circle(window, colors["dark blue"], [relPlayerPos[0], playerLaserDist + relPlayerPos[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
-                            
-                        else: # If the mouse is directly below the player:
-                            pygame.draw.circle(window, colors["dark blue"], [relPlayerPos[0], relPlayerPos[1] - playerLaserDist], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
-
                 elif players.index(player) == 1:
                     # Blits your other teamate
-                    pygame.draw.circle(window, colors["blue"], [int((players[1]["pos"][0] - cameraPos[0] + (cameraZoom / 2)) * ((scrW / cameraZoom))), int((players[1]["pos"][1] - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom))], int(scrW / (2 * cameraZoom)), 0)
+                    pygame.draw.circle(window, colors["blue"], getScreenPos(player["pos"]), int(scrW / (2 * cameraZoom)), 0)
                 else:
                     # Blits the other team
-                    pygame.draw.circle(window, colors["orange"], [int((player["pos"][0] - cameraPos[0] + (cameraZoom / 2)) * ((scrW / cameraZoom))), int((player["pos"][1] - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom))], int(scrW / (2 * cameraZoom)), 0)
-                    
-                window.blit(fpsDisplayFont.render("pos:" + str(player["pos"]), 0, (255, 0, 0)), [getScreenPos(player["pos"])[0] + 50, getScreenPos(player["pos"])[1] + 75])
-                window.blit(fpsDisplayFont.render("health: " + str(player["health"]), 0, (255, 0, 0)), [getScreenPos(player["pos"])[0] + 50, getScreenPos(player["pos"])[1] + 100])
-                window.blit(fpsDisplayFont.render("energy: " + str(player["energy"]), 0, (255, 0, 0)), [getScreenPos(player["pos"])[0] + 50, getScreenPos(player["pos"])[1] + 125])
-            
-            spritepos = getWorldPos(mousePos)
-            spritepos = [int(spritepos[0]), int(spritepos[1])]
-            spritepos = getScreenPos(spritepos)
-            
-            window.blit(selectionSprite, spritepos)
-            
-            # Framerate counter. Delete this at will.
-            # (but if you're going to, get rid of 'fpsDisplayFont' and the clock as well)
+                    pygame.draw.circle(window, colors["orange"], getScreenPos(player["pos"]), int(scrW / (2 * cameraZoom)), 0)
+                
+                
+                
+                pygame.draw.circle(window, colors["dark " + player["team"]], [int(math.cos(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + getScreenPos(player["pos"])[0], int(math.sin(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + getScreenPos(player["pos"])[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+            # Framerate counter. Delete these at will.
+            # (but if you're going to, get rid of 'fpsDisplayFont')
             fps = t.get_fps()
             window.blit(fpsDisplayFont.render("fps: " + str(fps), 0, (255, 0, 0)), [0, 0])
         
