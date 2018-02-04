@@ -1,7 +1,7 @@
 # *** GRAPHICS ENGINE ***
 # This is a thing that makes pixels on a screen turn pretty colors
 
-import pygame, os, time, math
+import pygame, os, time, math, ctypes
 from pygame.locals import *
 
 pygame.init()
@@ -33,7 +33,7 @@ def getWorldPos(pos):
 
 # The operation of this entire function is difficult to explain with words alone, because it's based on a bunch of complicated and annoying math.
 # If you need to know how stuff works in here, talk to me.
-def raycast(point, slope, dir=0):
+def raycast(point, slope, dir=0, team=None):
     collisions = []
     
     # If the slope is 0, this performs a simplified version of the calculations that don't screw around with yInt.
@@ -41,9 +41,12 @@ def raycast(point, slope, dir=0):
         
         # Detects collisions with players.
         # Only checks for collisions with the players on the other team.
-        for player in range(2, 4):
-            if point[1] <= players[player]["pos"][1] + 0.5 and point[1] >= players[player]["pos"][1] - 0.5:
-                collisions.append([players[player]["pos"][0], point[1]])
+        for player in players:
+            if player["team"] == team:
+                continue
+            
+            elif point[1] <= player["pos"][1] + 0.5 and point[1] >= player["pos"][1] - 0.5:
+                collisions.append([player["pos"][0], point[1]])
         
         if dir > 0:
             offSetX = 0
@@ -71,9 +74,12 @@ def raycast(point, slope, dir=0):
         
         # Detects collisions with players.
         # Only checks for collisions with the players on the other team.
-        for player in range(2, 4):
-            if point[0] <= players[player]["pos"][0] + 0.5 and point[0] >= players[player]["pos"][0] - 0.5 and point[1] > players[player]["pos"][1]:
-                collisions.append([point[0], players[player]["pos"][1]])
+        for player in players:
+            if player["team"] == team:
+                continue
+            
+            elif point[0] <= player["pos"][0] + 0.5 and point[0] >= player["pos"][0] - 0.5 and point[1] > player["pos"][1]:
+                collisions.append([point[0], player["pos"][1]])
         
         yInt = [point[0], int(point[1])]
         
@@ -87,8 +93,11 @@ def raycast(point, slope, dir=0):
     # If the ray is pointing straight down, this performs a simplified version of the calculations that don't screw around with xInt.
     elif slope == "-inf":
         for player in range(2, 4):
-            if point[0] <= players[player]["pos"][0] + 0.5 and point[0] >= players[player]["pos"][0] - 0.5 and point[1] < players[player]["pos"][1]:
-                collisions.append([point[0], players[player]["pos"][1]])
+            if player["team"] == team:
+                continue
+            
+            elif point[0] <= player["pos"][0] + 0.5 and point[0] >= player["pos"][0] - 0.5 and point[1] < player["pos"][1]:
+                collisions.append([point[0], player["pos"][1]])
         
         yInt = [point[0], int(point[1]) + 1]
         
@@ -108,16 +117,18 @@ def raycast(point, slope, dir=0):
         b1 = point[1] - (slope * point[0])# Useful thing, it's the y-intercept of the ray.
         
         #Calculates collisions with players
-        for player in range(2, 4):
+        for player in players:
+            if player["team"] == team:
+                continue
             
             #All of the following is based on a bunch of really annoying algebra.
             m2 = -1 / (slope) # Slope of a line that is perpendicular to the ray.
-            b2 = players[player]["pos"][1] - (m2 * players[player]["pos"][0]) # y-intercept of a line that is perpendicular to the ray, and passes through the center of a player.
+            b2 = player["pos"][1] - (m2 * player["pos"][0]) # y-intercept of a line that is perpendicular to the ray, and passes through the center of a player.
             xCoord = (b2 - b1) / (slope - m2) # x position of the intersection between y=m2 + b2 and y=slope + b1
             yCoord = slope * xCoord + b1 # y position of the intersection between y=m2 + b2 and y=slope + b1
             
             # Checks if the intersection between the lines is within the player's body.
-            if math.sqrt(math.pow(xCoord - players[player]["pos"][0], 2) + math.pow(yCoord - players[player]["pos"][1], 2)) <= 0.5:
+            if math.sqrt(math.pow(xCoord - player["pos"][0], 2) + math.pow(yCoord - player["pos"][1], 2)) <= 0.5:
                 
                 # Makes sure that the intersection is on the correct side of the entire fucking universe.
                 if dir < 0 and point[0] > xCoord:
@@ -247,19 +258,45 @@ def raycast(point, slope, dir=0):
         return nearestCollision
     
 
-# This takes a set of 2 points (or trigonometric ratios) and concerts it into an angle in degrees,
+# This takes a slope and a direction (similar to 'raycast') and returns an angle in degrees.
 # which makes server communication slightly less painful.
 # (when it eventually exists)
-def calcRot(point0, point1):
-    if point0[0] > point1[0]:
-        return ((point1[0] // point0[0]) * 90) + (((180 / math.pi) * math.atan((point0[1] - point1[1]) / (point0[0] - point1[0]))) * (-1)) + (point0[1] // point1[1]) * 360
-    elif mousePos[0] < scrW/ 2:
-        return (((point0[0] // point1[0]) * 90) + (180 / math.pi) * math.atan((point0[1] - point1[0]) / (point0[0] - point1[0]))) * (-1) + 180
-    else:
-        if point0[1] < point1[1]:
+def toDeg(slope, dir=0):
+    if dir == 0:
+        if slope == "+inf":
             return 90.0
+        
         else:
             return 270.0
+        
+    elif dir > 0:
+        if slope > 0:
+            return math.atan(slope) * (180 / math.pi)
+        
+        else:
+            return (math.atan(slope) * (180 / math.pi)) + 360
+        
+    elif dir < 0:
+        return math.atan(slope) * (180 / math.pi) + 180
+
+def toSlope(deg):
+    if deg == 90.0:
+        return ["+inf", 1]
+    
+    elif deg == 270.0:
+        return ["-inf", 1]
+    
+    elif deg < 90:
+        return [math.tan(deg * (math.pi / 180)), 1]
+    
+    elif deg > 90 and deg < 270:
+        return [math.tan((deg - 180) * (math.pi / 180)), -1]
+    
+    else:
+        return [math.tan((deg - 360) * (math.pi / 180)), 1]
+    
+
+
         
 # Mildly important.
 def main():
@@ -275,6 +312,8 @@ def main():
     scrH = pygame.display.Info().current_h # Height of the screen
 
     window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF) # The screen
+    
+    pygame.display.set_caption("BaseRace")
     
     colors = {"orange":[255, 128, 0], "blue":[0, 128, 255], "white":[255, 255, 255], "black":[0, 0, 0], "dark blue":[0, 64, 128], "dark orange":[128, 64, 0], "green":[0, 255, 0], "grey":[223, 223, 223]} # Dictionary of colors
     
@@ -298,7 +337,7 @@ def main():
     
     global players
     
-    players = [{"health":100, "pos":[16.0, 16.0], "energy":100, "rotation":0}, {"health":100, "pos":[12.0, 4.0], "energy":100, "rotation":0}, {"health":100, "pos":[18.0, 29.0], "energy":100, "rotation":0}, {"health":100, "pos":[17.0, 27.0], "energy":100, "rotation":0}]
+    players = [{"team":"blue", "health":100, "pos":[16.0, 16.0], "energy":100, "rotation":[0, 0], "isShooting":False}, {"team":"blue", "health":100, "pos":[12.0, 4.0], "energy":100, "rotation":[-0.5, 1], "isShooting":False}, {"team":"orange", "health":100, "pos":[18.0, 29.0], "energy":100, "rotation":[5.1, 1], "isShooting":False}, {"team":"orange", "health":100, "pos":[18.0, 27.0], "energy":100, "rotation":[2.3, -1], "isShooting":True}]
     
     global playerRadius
     
@@ -357,6 +396,7 @@ def main():
     # 1 - Black wall
     # 2 - Orange wall
     
+    
     ### PARSES AND ROTATES THE 'rawWorld' VARIABLE IN A NEW VARIABLE CALLED 'world' ###
     # * none of this will exist when we actually implement this.
 
@@ -391,10 +431,10 @@ def main():
     ### MAIN LOOP ###########################################################################################################################################################################
     #########################################################################################################################################################################################
 
+    # Mildly important
     while not gameExit:
         t.tick() # Ticks the clock. As of version 0.0.wheneverTazwelBitchedAtMeToPutMoreCommentsInMyCode, this is only used for displaying FPS.
         mousePos = pygame.mouse.get_pos() # Gets mouse position.
-        
         
         #Event handler, gets & handles input.
         for event in pygame.event.get():
@@ -454,6 +494,13 @@ def main():
                     
                 elif event.button == 3: # Right click detection
                     inputSet[5] = 0
+        
+        # Checks if the mouse is being clicked, and makes the player start shooting if it is.
+        if inputSet[4] == 1:
+            players[0]["isShooting"] = True
+            
+        else:
+            players[0]["isShooting"] = False
         
         # Based on what keys are being pressed (WSAD, or the first four values in inputSet, respectively),
         # this changes playerDelta.
@@ -576,23 +623,7 @@ def main():
                 
         else: # If the camera DOES exceed the world size, meaning restricting it to the world is impossible:
             window.fill(colors["white"]) # Fill the screen with white (or whatever we decide to make the color of air in the future), so there aren't weird graphical artifacts.
-        
-        
-        # This is what will draw the laser when the player clicks. Not working yet.
-        if inputSet[4] == 1:
-            
-            if mousePos[0] == relPlayerPos[0]: # Check if the mouse is directly above or below the player
-                
-                if mousePos[1] > relPlayerPos[1]: # Check if the mouse is directly above the player
-                    ray = raycast(players[0]["pos"], "-inf")
-                    
-                else: # Catch if the mouse is directly below the player
-                    ray = raycast(players[0]["pos"], "+inf")
-                    
-            else:
-                ray = raycast(players[0]["pos"], (relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), (mousePos[0] - relPlayerPos[0])) # This calculates the slope of the line and starting point of the ray and gets the nearest intersection.
-        else:
-            ray = None
+
             
         # This the important thing.
         # It renders the section of the world that's visible to the camera.
@@ -616,48 +647,35 @@ def main():
                             
                             ########## Uncomment the following line to display block positions (terrible performance): ##########
                             #window.blit(fpsDisplayFont.render("(" + str(column) + ", " + str(row) + ")", 0, (255, 0, 0)), [(column - cameraPos[0] + (cameraZoom // 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) // 2) * (scrW / cameraZoom) + (scrW / (cameraZoom * 2))])
-                            
-            if str(type(ray)) == "<class 'list'>":
-                pygame.draw.line(window, colors["blue"], getScreenPos(players[0]["pos"]), getScreenPos(ray), 4)
             
-            
+            # Displays the player's lasers, if they're firing
             for player in players:
+                if player["isShooting"]:
+                    pygame.draw.line(window, colors[player["team"]], getScreenPos(player["pos"]), getScreenPos(raycast(player["pos"], player["rotation"][0], player["rotation"][1], player["team"])), 4)
+            
+            
+            # Displays players.
+            for player in players:
+                relPlayerPos = getScreenPos(player["pos"])
                 
-                # If there was a better way of doing this, I would.
-                # I'm sorry.
                 
                 # This block is what displays players.
                 if players.index(player) == 0:
-                    # Calculates the relative player position on the screen:
-                    relPlayerPos = [int((player["pos"][0] - cameraPos[0] + (cameraZoom / 2)) * ((scrW / cameraZoom))), int((player["pos"][1] - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom))]
-                    
-                    # Blits the player's body to it's relative position on the screen.
-                    pygame.draw.circle(window, colors["blue"], relPlayerPos, int(scrW / (2 * cameraZoom)), 0)
-                    
-                    # Blits the small, darker-colored circle that shows where the player is facing.
+                    # Calculates the player's rotation.
                     if mousePos[0] - relPlayerPos[0] > 0: # Checks if the mouse is on the right side of the screen
-                        relAngle = math.atan((mousePos[1] - relPlayerPos[1]) / (mousePos[0] - relPlayerPos[0])) # Calculates the relative angle between the mouse and the relative position of the player on the screen
-                        pygame.draw.circle(window, colors["dark blue"], [int(math.cos(relAngle) * playerLaserDist) + relPlayerPos[0], int(math.sin(relAngle) * playerLaserDist) + relPlayerPos[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+                        player["rotation"] = [(relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), 1]
                         
                     elif mousePos[0] - relPlayerPos[0] < 0: # Checks if the mouse is on the left side of the screen
-                        relAngle = math.atan((mousePos[1] - relPlayerPos[1]) / (mousePos[0] - relPlayerPos[0])) # Calculates the relative angle between the mouse and the relative position of the player on the screen
-                        pygame.draw.circle(window, colors["dark blue"], [int(math.cos(relAngle) * playerLaserDist) * -1 + relPlayerPos[0], int(math.sin(relAngle) * playerLaserDist) * -1 + relPlayerPos[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+                        player["rotation"] = [(relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), -1]
+                
+                
+                # Draws the player's body.
+                pygame.draw.circle(window, colors[player["team"]], relPlayerPos, int(scrW / (2 * cameraZoom)), 0)
+                
+                # Draws the player's adorable little cicle that shows where they're facing.
+                pygame.draw.circle(window, colors["dark " + player["team"]], [int(math.cos(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[0], int(math.sin(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
                         
-                    else: # Catches if the mouse is directly above or below the player
-                        
-                        if mousePos[1] - relPlayerPos[1] > 0: # Checks if the mouse is above the player
-                            pygame.draw.circle(window, colors["dark blue"], [relPlayerPos[0], playerLaserDist + relPlayerPos[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
-                            
-                        else: # If the mouse is directly below the player:
-                            pygame.draw.circle(window, colors["dark blue"], [relPlayerPos[0], relPlayerPos[1] - playerLaserDist], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
-
-                elif players.index(player) == 1:
-                    # Blits your other teamate
-                    pygame.draw.circle(window, colors["blue"], [int((players[1]["pos"][0] - cameraPos[0] + (cameraZoom / 2)) * ((scrW / cameraZoom))), int((players[1]["pos"][1] - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom))], int(scrW / (2 * cameraZoom)), 0)
-                else:
-                    # Blits the other team
-                    pygame.draw.circle(window, colors["orange"], [int((player["pos"][0] - cameraPos[0] + (cameraZoom / 2)) * ((scrW / cameraZoom))), int((player["pos"][1] - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom))], int(scrW / (2 * cameraZoom)), 0)
-            
+                
             # Framerate counter. Delete these at will.
             # (but if you're going to, get rid of 'fpsDisplayFont')
             fps = t.get_fps()

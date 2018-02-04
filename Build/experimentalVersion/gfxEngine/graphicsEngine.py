@@ -258,16 +258,16 @@ def raycast(point, slope, dir=0, team=None):
         return nearestCollision
     
 
-# This takes a set of 2 points (or trigonometric ratios) and concerts it into an angle in degrees,
+# This takes a slope and a direction (similar to 'raycast') and returns an angle in degrees.
 # which makes server communication slightly less painful.
 # (when it eventually exists)
-def calcRot(slope, dir=0):
+def toDeg(slope, dir=0):
     if dir == 0:
         if slope == "+inf":
-            return 90
+            return 90.0
         
         else:
-            return 270
+            return 270.0
         
     elif dir > 0:
         if slope > 0:
@@ -278,6 +278,24 @@ def calcRot(slope, dir=0):
         
     elif dir < 0:
         return math.atan(slope) * (180 / math.pi) + 180
+
+def toSlope(deg):
+    if deg == 90.0:
+        return ["+inf", 1]
+    
+    elif deg == 270.0:
+        return ["-inf", 1]
+    
+    elif deg < 90:
+        return [math.tan(deg * (math.pi / 180)), 1]
+    
+    elif deg > 90 and deg < 270:
+        return [math.tan((deg - 180) * (math.pi / 180)), -1]
+    
+    else:
+        return [math.tan((deg - 360) * (math.pi / 180)), 1]
+    
+
 
         
 # Mildly important.
