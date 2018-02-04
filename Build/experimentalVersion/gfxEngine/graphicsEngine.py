@@ -261,16 +261,24 @@ def raycast(point, slope, dir=0, team=None):
 # This takes a set of 2 points (or trigonometric ratios) and concerts it into an angle in degrees,
 # which makes server communication slightly less painful.
 # (when it eventually exists)
-def calcRot(point0, point1):
-    if point0[0] > point1[0]:
-        return ((point1[0] // point0[0]) * 90) + (((180 / math.pi) * math.atan((point0[1] - point1[1]) / (point0[0] - point1[0]))) * (-1)) + (point0[1] // point1[1]) * 360
-    elif mousePos[0] < scrW/ 2:
-        return (((point0[0] // point1[0]) * 90) + (180 / math.pi) * math.atan((point0[1] - point1[0]) / (point0[0] - point1[0]))) * (-1) + 180
-    else:
-        if point0[1] < point1[1]:
-            return 90.0
+def calcRot(slope, dir=0):
+    if dir == 0:
+        if slope == "+inf":
+            return 90
+        
         else:
-            return 270.0
+            return 270
+        
+    elif dir > 0:
+        if slope > 0:
+            return math.atan(slope) * (180 / math.pi)
+        
+        else:
+            return (math.atan(slope) * (180 / math.pi)) + 360
+        
+    elif dir < 0:
+        return math.atan(slope) * (180 / math.pi) + 180
+
         
 # Mildly important.
 def main():
@@ -654,6 +662,7 @@ def main():
                         
                     elif mousePos[0] - relPlayerPos[0] < 0: # Checks if the mouse is on the left side of the screen
                         player["rotation"] = [(relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), -1]
+                
                 
                 # Draws the player's body.
                 pygame.draw.circle(window, colors[player["team"]], relPlayerPos, int(scrW / (2 * cameraZoom)), 0)
