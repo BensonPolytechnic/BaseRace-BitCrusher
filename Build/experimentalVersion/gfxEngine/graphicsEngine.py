@@ -1,7 +1,7 @@
 # *** GRAPHICS ENGINE ***
 # This is a thing that makes pixels on a screen turn pretty colors
 
-import pygame, os, time, math
+import pygame, os, time, math, ctypes
 from pygame.locals import *
 
 pygame.init()
@@ -277,6 +277,19 @@ def main():
     
     ### DISPLAY VARIABLES ###################################################################################
     
+    ### DETERMINES IF DEBUG TOOLS SHOULD BE ENABLED ###
+    
+    while True:
+        displayPlayerInfo = input("Enable debug tools? (y/n): ")
+        
+        if displayPlayerInfo.lower() == "y":
+            displayPlayerInfo = True
+            break
+        
+        elif displayPlayerInfo.lower() == "n":
+            displayPlayerInfo = False
+            break
+    
     global scrW
     
     scrW = pygame.display.Info().current_w # Width of the screen
@@ -286,6 +299,8 @@ def main():
     scrH = pygame.display.Info().current_h # Height of the screen
 
     window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF) # The screen
+    
+    pygame.display.set_caption("BaseRace")
     
     colors = {"orange":[255, 128, 0], "blue":[0, 128, 255], "white":[255, 255, 255], "black":[0, 0, 0], "dark blue":[0, 64, 128], "dark orange":[128, 64, 0], "green":[0, 255, 0], "grey":[223, 223, 223]} # Dictionary of colors
     
@@ -368,6 +383,7 @@ def main():
     # 1 - Black wall
     # 2 - Orange wall
     
+    
     ### PARSES AND ROTATES THE 'rawWorld' VARIABLE IN A NEW VARIABLE CALLED 'world' ###
     # * none of this will exist when we actually implement this.
 
@@ -402,10 +418,10 @@ def main():
     ### MAIN LOOP ###########################################################################################################################################################################
     #########################################################################################################################################################################################
 
+    # Mildly important
     while not gameExit:
         t.tick() # Ticks the clock. As of version 0.0.wheneverTazwelBitchedAtMeToPutMoreCommentsInMyCode, this is only used for displaying FPS.
         mousePos = pygame.mouse.get_pos() # Gets mouse position.
-        
         
         #Event handler, gets & handles input.
         for event in pygame.event.get():
@@ -465,6 +481,13 @@ def main():
                     
                 elif event.button == 3: # Right click detection
                     inputSet[5] = 0
+        
+        # Checks if the mouse is being clicked, and makes the player start shooting if it is.
+        if inputSet[4] == 1:
+            players[0]["isShooting"] = True
+            
+        else:
+            players[0]["isShooting"] = False
         
         # Based on what keys are being pressed (WSAD, or the first four values in inputSet, respectively),
         # this changes playerDelta.
@@ -587,30 +610,7 @@ def main():
                 
         else: # If the camera DOES exceed the world size, meaning restricting it to the world is impossible:
             window.fill(colors["white"]) # Fill the screen with white (or whatever we decide to make the color of air in the future), so there aren't weird graphical artifacts.
-        
-        
-        # Checks if the mouse is being clicked
-        if inputSet[4] == 1:
-            players[0]["isShooting"] = True
-            
-        else:
-            players[0]["isShooting"] = False
-            
-            
-##        if inputSet[4] == 1:
-##            
-##            if mousePos[0] == relPlayerPos[0]: # Check if the mouse is directly above or below the player
-##                
-##                if mousePos[1] > relPlayerPos[1]: # Check if the mouse is directly above the player
-##                    ray = raycast(players[0]["pos"], "-inf")
-##                    
-##                else: # Catch if the mouse is directly below the player
-##                    ray = raycast(players[0]["pos"], "+inf")
-##                    
-##            else:
-##                ray = raycast(players[0]["pos"], (relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), (mousePos[0] - relPlayerPos[0])) # This calculates the slope of the line and starting point of the ray and gets the nearest intersection.
-##        else:
-##            ray = None
+
             
         # This the important thing.
         # It renders the section of the world that's visible to the camera.
@@ -634,43 +634,39 @@ def main():
                             
                             ########## Uncomment the following line to display block positions (terrible performance): ##########
                             #window.blit(fpsDisplayFont.render("(" + str(column) + ", " + str(row) + ")", 0, (255, 0, 0)), [(column - cameraPos[0] + (cameraZoom // 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) // 2) * (scrW / cameraZoom) + (scrW / (cameraZoom * 2))])
-                            
+            
+            # Displays the player's lasers, if they're firing
             for player in players:
                 if player["isShooting"]:
                     pygame.draw.line(window, colors[player["team"]], getScreenPos(player["pos"]), getScreenPos(raycast(player["pos"], player["rotation"][0], player["rotation"][1], player["team"])), 4)
             
             
+            # Displays players.
             for player in players:
-                    
+                relPlayerPos = getScreenPos(player["pos"])
                 
-                # If there was a better way of doing this, I would.
-                # I'm sorry.
                 
                 # This block is what displays players.
                 if players.index(player) == 0:
-                    # Calculates the relative player position on the screen:
-                    relPlayerPos = [int((player["pos"][0] - cameraPos[0] + (cameraZoom / 2)) * ((scrW / cameraZoom))), int((player["pos"][1] - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom))]
-                    
-                    # Blits the player's body to it's relative position on the screen.
-                    pygame.draw.circle(window, colors["blue"], relPlayerPos, int(scrW / (2 * cameraZoom)), 0)
-                    
-                    # Blits the small, darker-colored circle that shows where the player is facing.
+                    # Calculates the player's rotation.
                     if mousePos[0] - relPlayerPos[0] > 0: # Checks if the mouse is on the right side of the screen
                         player["rotation"] = [(relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), 1]
                         
                     elif mousePos[0] - relPlayerPos[0] < 0: # Checks if the mouse is on the left side of the screen
                         player["rotation"] = [(relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), -1]
+                
+                # Draws the player's body.
+                pygame.draw.circle(window, colors[player["team"]], relPlayerPos, int(scrW / (2 * cameraZoom)), 0)
+                
+                # Draws the player's adorable little cicle that shows where they're facing.
+                pygame.draw.circle(window, colors["dark " + player["team"]], [int(math.cos(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[0], int(math.sin(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+                
+                # If debug tools are enabled, this displays player information.
+                if displayPlayerInfo:
+                    for attribute in enumerate(player):
+                        window.blit(fpsDisplayFont.render(str(attribute[1]) + ": " + str(player[attribute[1]]), 0, (255, 0, 0)), [relPlayerPos[0] + scrW / 32, relPlayerPos[1] + attribute[0] * 30])
                         
-                elif players.index(player) == 1:
-                    # Blits your other teamate
-                    pygame.draw.circle(window, colors["blue"], getScreenPos(player["pos"]), int(scrW / (2 * cameraZoom)), 0)
-                else:
-                    # Blits the other team
-                    pygame.draw.circle(window, colors["orange"], getScreenPos(player["pos"]), int(scrW / (2 * cameraZoom)), 0)
                 
-                
-                
-                pygame.draw.circle(window, colors["dark " + player["team"]], [int(math.cos(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + getScreenPos(player["pos"])[0], int(math.sin(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + getScreenPos(player["pos"])[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
             # Framerate counter. Delete these at will.
             # (but if you're going to, get rid of 'fpsDisplayFont')
             fps = t.get_fps()
