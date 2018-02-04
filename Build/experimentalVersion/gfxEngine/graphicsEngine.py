@@ -92,7 +92,7 @@ def raycast(point, slope, dir=0, team=None):
     
     # If the ray is pointing straight down, this performs a simplified version of the calculations that don't screw around with xInt.
     elif slope == "-inf":
-        for player in range(2, 4):
+        for player in players:
             if player["team"] == team:
                 continue
             
@@ -279,6 +279,7 @@ def toDeg(slope, dir=0):
     elif dir < 0:
         return math.atan(slope) * (180 / math.pi) + 180
 
+# This takes an angle in degrees and returns a slope/direction list.
 def toSlope(deg):
     if deg == 90.0:
         return ["+inf", 1]
@@ -296,8 +297,6 @@ def toSlope(deg):
         return [math.tan((deg - 360) * (math.pi / 180)), 1]
     
 
-
-        
 # Mildly important.
 def main():
     
@@ -348,9 +347,11 @@ def main():
     
     ### PLAYER VARIABLES ###################################################################################
     
+    teams = [{"color":colors["blue"]}, {"color":colors["orange"]}] # Player teams. Currently only contains information on team color.
+    
     global players
     
-    players = [{"team":"blue", "health":100, "pos":[16.0, 16.0], "energy":100, "rotation":[0, 0], "isShooting":False}, {"team":"blue", "health":100, "pos":[12.0, 4.0], "energy":100, "rotation":[-0.5, 1], "isShooting":False}, {"team":"orange", "health":100, "pos":[18.0, 29.0], "energy":100, "rotation":[5.1, 1], "isShooting":False}, {"team":"orange", "health":100, "pos":[18.0, 27.0], "energy":100, "rotation":[2.3, -1], "isShooting":True}]
+    players = [{"team":0, "health":100, "pos":[16.0, 16.0], "energy":100, "rotation":[0, 0], "isShooting":False}, {"team":0, "health":100, "pos":[12.0, 4.0], "energy":100, "rotation":[-0.5, 1], "isShooting":False}, {"team":1, "health":100, "pos":[18.0, 29.0], "energy":100, "rotation":[5.1, 1], "isShooting":False}, {"team":1, "health":100, "pos":[18.0, 27.0], "energy":100, "rotation":[2.3, -1], "isShooting":True}]
     
     global playerRadius
     
@@ -444,7 +445,6 @@ def main():
     ### MAIN LOOP ###########################################################################################################################################################################
     #########################################################################################################################################################################################
 
-    # Mildly important
     while not gameExit:
         t.tick() # Ticks the clock. As of version 0.0.wheneverTazwelBitchedAtMeToPutMoreCommentsInMyCode, this is only used for displaying FPS.
         mousePos = pygame.mouse.get_pos() # Gets mouse position.
@@ -664,12 +664,12 @@ def main():
             # Displays the player's lasers, if they're firing
             for player in players:
                 if player["isShooting"]:
-                    pygame.draw.line(window, colors[player["team"]], getScreenPos(player["pos"]), getScreenPos(raycast(player["pos"], player["rotation"][0], player["rotation"][1], player["team"])), 4)
+                    pygame.draw.line(window, teams[player["team"]]["color"], getScreenPos(player["pos"]), getScreenPos(raycast(player["pos"], player["rotation"][0], player["rotation"][1], player["team"])), 4)
             
             
             # Displays players.
             for player in players:
-                relPlayerPos = getScreenPos(player["pos"])
+                relPlayerPos = getScreenPos(player["pos"]) # Gets the relative position of the player on the screen
                 
                 
                 # This block is what displays players.
@@ -680,13 +680,29 @@ def main():
                         
                     elif mousePos[0] - relPlayerPos[0] < 0: # Checks if the mouse is on the left side of the screen
                         player["rotation"] = [(relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), -1]
+                    
+                    elif mousePos[1] > relPlayerPos[1]:
+                        player["rotation"] = ["-inf", 0]
+                    
+                    else:
+                        player["rotation"] = ["+inf", 0]
                 
                 
                 # Draws the player's body.
-                pygame.draw.circle(window, colors[player["team"]], relPlayerPos, int(scrW / (2 * cameraZoom)), 0)
+                pygame.draw.circle(window, teams[player["team"]]["color"], relPlayerPos, int(scrW / (2 * cameraZoom)), 0)
                 
                 # Draws the player's adorable little cicle that shows where they're facing.
-                pygame.draw.circle(window, colors["dark " + player["team"]], [int(math.cos(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[0], int(math.sin(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+                # Checks if the player's rotation isn't straight up or down.
+                if str(type(player["rotation"][0])) == "<class 'float'>" or str(type(player["rotation"][0])) == "<class 'int'>":
+                    pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [int(math.cos(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[0], int(math.sin(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+                
+                # Catches if the player's rotation is straight up.
+                elif player["rotation"][0] == "+inf":
+                    pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [relPlayerPos[0], relPlayerPos[1] - playerLaserDist], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+                
+                # Catches if the player's rotation is straight down.
+                else:
+                    pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [relPlayerPos[0], relPlayerPos[1] + playerLaserDist], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
                 
                 # If debug tools are enabled, this displays player information.
                 if displayPlayerInfo:
