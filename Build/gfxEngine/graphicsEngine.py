@@ -1,10 +1,11 @@
 # *** GRAPHICS ENGINE ***
 # This is a thing that makes pixels on a screen turn pretty colors
 
-import pygame, os, time, math, ctypes
+import pygame, os, time, math
 from pygame.locals import *
 
 pygame.init()
+pygame.font.init()
 
 # Takes a position of a point in the world, and returns its position on the screen in pixels.
 def getScreenPos(pos):
@@ -92,7 +93,7 @@ def raycast(point, slope, dir=0, team=None):
     
     # If the ray is pointing straight down, this performs a simplified version of the calculations that don't screw around with xInt.
     elif slope == "-inf":
-        for player in range(2, 4):
+        for player in players:
             if player["team"] == team:
                 continue
             
@@ -261,24 +262,25 @@ def raycast(point, slope, dir=0, team=None):
 # This takes a slope and a direction (similar to 'raycast') and returns an angle in degrees.
 # which makes server communication slightly less painful.
 # (when it eventually exists)
-def toDeg(slope, dir=0):
-    if dir == 0:
-        if slope == "+inf":
+def toDeg(rotation):
+    if rotation[1] == 0:
+        if rotation[0] == "+inf":
             return 90.0
         
         else:
             return 270.0
         
-    elif dir > 0:
-        if slope > 0:
-            return math.atan(slope) * (180 / math.pi)
+    elif rotation[1] > 0:
+        if rotation[0] > 0:
+            return math.atan(rotation[0]) * (180 / math.pi)
         
         else:
-            return (math.atan(slope) * (180 / math.pi)) + 360
+            return (math.atan(rotation[0]) * (180 / math.pi)) + 360
         
-    elif dir < 0:
-        return math.atan(slope) * (180 / math.pi) + 180
+    elif rotation[1] < 0:
+        return math.atan(rotation[0]) * (180 / math.pi) + 180
 
+# This takes an angle in degrees and returns a slope/direction list.
 def toSlope(deg):
     if deg == 90.0:
         return ["+inf", 1]
@@ -296,12 +298,23 @@ def toSlope(deg):
         return [math.tan((deg - 360) * (math.pi / 180)), 1]
     
 
-
-        
 # Mildly important.
 def main():
     
     ### DISPLAY VARIABLES ###################################################################################
+    
+    ### DETERMINES IF DEBUG TOOLS SHOULD BE ENABLED ###
+    
+    while True:
+        displayPlayerInfo = input("Enable debug tools? (y/n): ")
+        
+        if displayPlayerInfo.lower() == "y":
+            displayPlayerInfo = True
+            break
+        
+        elif displayPlayerInfo.lower() == "n":
+            displayPlayerInfo = False
+            break
     
     global scrW
     
@@ -319,7 +332,15 @@ def main():
     
     fpsDisplayFont = pygame.font.Font(os.path.join("data", "fonts", "desc.ttf"), int(scrH / 50)) # Font to display the fps with. Delete this if you're removing the fps counter.
     
+    monoFont = pygame.font.Font(os.path.join("data", "fonts", "VT323-Regular.ttf"), int(scrH * (25 / 540))) # Another font.
+    
     lastFrameTime = time.time() # Used to determine if the screen should update, because there's no point in rendering graphics at 800hz if your monitor only supports 60hz.
+    
+    statusBarDims = [scrW / 10, scrH / 20]
+
+    healthBarPos = [scrW * (25 / 1920), scrH * (19 / 20) - scrH * (104 / 1080)]
+    
+    energyBarPos = [scrW * (25 / 1920), scrH * (19 / 20) - scrH * (25 / 1080)]
     
     ### CAMERA VARIABLES ###################################################################################
     
@@ -335,9 +356,11 @@ def main():
     
     ### PLAYER VARIABLES ###################################################################################
     
+    teams = [{"color":colors["blue"]}, {"color":colors["orange"]}] # Player teams. Currently only contains information on team color.
+    
     global players
     
-    players = [{"team":"blue", "health":100, "pos":[16.0, 16.0], "energy":100, "rotation":[0, 0], "isShooting":False}, {"team":"blue", "health":100, "pos":[12.0, 4.0], "energy":100, "rotation":[-0.5, 1], "isShooting":False}, {"team":"orange", "health":100, "pos":[18.0, 29.0], "energy":100, "rotation":[5.1, 1], "isShooting":False}, {"team":"orange", "health":100, "pos":[18.0, 27.0], "energy":100, "rotation":[2.3, -1], "isShooting":True}]
+    players = [{"team":0, "health":100, "pos":[16.0, 16.0], "energy":100, "rotation":[0, 0], "isShooting":False}, {"team":0, "health":100, "pos":[12.0, 4.0], "energy":100, "rotation":[-0.5, 1], "isShooting":False}, {"team":1, "health":100, "pos":[18.0, 29.0], "energy":100, "rotation":[5.1, 1], "isShooting":False}, {"team":1, "health":100, "pos":[18.0, 27.0], "energy":100, "rotation":[2.3, -1], "isShooting":True}]
     
     global playerRadius
     
@@ -431,7 +454,6 @@ def main():
     ### MAIN LOOP ###########################################################################################################################################################################
     #########################################################################################################################################################################################
 
-    # Mildly important
     while not gameExit:
         t.tick() # Ticks the clock. As of version 0.0.wheneverTazwelBitchedAtMeToPutMoreCommentsInMyCode, this is only used for displaying FPS.
         mousePos = pygame.mouse.get_pos() # Gets mouse position.
@@ -455,6 +477,8 @@ def main():
                     
                 elif event.key == K_s:
                     inputSet[1] = 1
+                elif event.key == K_t:
+                    players[0]["health"] -= 5
                 
                 #Debug tools, they zoom the camera out or in:
                 elif event.key == K_e:
@@ -651,12 +675,12 @@ def main():
             # Displays the player's lasers, if they're firing
             for player in players:
                 if player["isShooting"]:
-                    pygame.draw.line(window, colors[player["team"]], getScreenPos(player["pos"]), getScreenPos(raycast(player["pos"], player["rotation"][0], player["rotation"][1], player["team"])), 4)
+                    pygame.draw.line(window, teams[player["team"]]["color"], getScreenPos(player["pos"]), getScreenPos(raycast(player["pos"], player["rotation"][0], player["rotation"][1], player["team"])), 4)
             
             
             # Displays players.
             for player in players:
-                relPlayerPos = getScreenPos(player["pos"])
+                relPlayerPos = getScreenPos(player["pos"]) # Gets the relative position of the player on the screen
                 
                 
                 # This block is what displays players.
@@ -667,14 +691,48 @@ def main():
                         
                     elif mousePos[0] - relPlayerPos[0] < 0: # Checks if the mouse is on the left side of the screen
                         player["rotation"] = [(relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), -1]
+                    
+                    elif mousePos[1] > relPlayerPos[1]:
+                        player["rotation"] = ["-inf", 0]
+                    
+                    else:
+                        player["rotation"] = ["+inf", 0]
                 
                 
                 # Draws the player's body.
-                pygame.draw.circle(window, colors[player["team"]], relPlayerPos, int(scrW / (2 * cameraZoom)), 0)
+                pygame.draw.circle(window, teams[player["team"]]["color"], relPlayerPos, int(scrW / (2 * cameraZoom)), 0)
                 
                 # Draws the player's adorable little cicle that shows where they're facing.
-                pygame.draw.circle(window, colors["dark " + player["team"]], [int(math.cos(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[0], int(math.sin(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
-                        
+                # Checks if the player's rotation isn't straight up or down.
+                if str(type(player["rotation"][0])) == "<class 'float'>" or str(type(player["rotation"][0])) == "<class 'int'>":
+                    pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [int(math.cos(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[0], int(math.sin(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+                
+                # Catches if the player's rotation is straight up.
+                elif player["rotation"][0] == "+inf":
+                    pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [relPlayerPos[0], relPlayerPos[1] - playerLaserDist], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+                
+                # Catches if the player's rotation is straight down.
+                else:
+                    pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [relPlayerPos[0], relPlayerPos[1] + playerLaserDist], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+                
+                # If debug tools are enabled, this displays player information.
+                if displayPlayerInfo:
+                    for attribute in enumerate(player):
+                        window.blit(fpsDisplayFont.render(str(attribute[1]) + ": " + str(player[attribute[1]]), 0, (255, 0, 0)), [relPlayerPos[0] + scrW / 32, relPlayerPos[1] + attribute[0] * 30])
+            
+            ### EVERYTHING PAST THIS POINT IS UI ###
+            
+            # Draws health and energy bar borders.
+            pygame.draw.rect(window, [32, 255, 64], pygame.Rect(healthBarPos, statusBarDims), 2)  
+            pygame.draw.rect(window, [64, 128, 255], pygame.Rect(energyBarPos, statusBarDims), 2)
+            
+            # Draws health and energy bar interiors.
+            window.fill([32, 255, 64], pygame.Rect(healthBarPos, [statusBarDims[0] * (players[0]["health"] / 100), statusBarDims[1]]))  
+            window.fill([64, 128, 255], pygame.Rect(energyBarPos, [statusBarDims[0] * (players[0]["energy"] / 100), statusBarDims[1]]))
+            
+            # Draws text over health and energy bars.
+            window.blit(monoFont.render(" HEALTH", 0, (32, 128, 16)), healthBarPos)
+            window.blit(monoFont.render(" ENERGY", 0, (16, 64, 128)), energyBarPos)
                 
             # Framerate counter. Delete these at will.
             # (but if you're going to, get rid of 'fpsDisplayFont')

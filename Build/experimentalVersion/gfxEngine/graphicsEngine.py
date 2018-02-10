@@ -1,10 +1,11 @@
 # *** GRAPHICS ENGINE ***
 # This is a thing that makes pixels on a screen turn pretty colors
 
-import pygame, os, time, math, ctypes
+import pygame, os, time, math
 from pygame.locals import *
 
 pygame.init()
+pygame.font.init()
 
 # Takes a position of a point in the world, and returns its position on the screen in pixels.
 def getScreenPos(pos):
@@ -261,23 +262,23 @@ def raycast(point, slope, dir=0, team=None):
 # This takes a slope and a direction (similar to 'raycast') and returns an angle in degrees.
 # which makes server communication slightly less painful.
 # (when it eventually exists)
-def toDeg(slope, dir=0):
-    if dir == 0:
-        if slope == "+inf":
+def toDeg(rotation):
+    if rotation[1] == 0:
+        if rotation[0] == "+inf":
             return 90.0
         
         else:
             return 270.0
         
-    elif dir > 0:
-        if slope > 0:
-            return math.atan(slope) * (180 / math.pi)
+    elif rotation[1] > 0:
+        if rotation[0] > 0:
+            return math.atan(rotation[0]) * (180 / math.pi)
         
         else:
-            return (math.atan(slope) * (180 / math.pi)) + 360
+            return (math.atan(rotation[0]) * (180 / math.pi)) + 360
         
-    elif dir < 0:
-        return math.atan(slope) * (180 / math.pi) + 180
+    elif rotation[1] < 0:
+        return math.atan(rotation[0]) * (180 / math.pi) + 180
 
 # This takes an angle in degrees and returns a slope/direction list.
 def toSlope(deg):
@@ -331,7 +332,15 @@ def main():
     
     fpsDisplayFont = pygame.font.Font(os.path.join("data", "fonts", "desc.ttf"), int(scrH / 50)) # Font to display the fps with. Delete this if you're removing the fps counter.
     
+    monoFont = pygame.font.Font(os.path.join("data", "fonts", "VT323-Regular.ttf"), int(scrH * (25 / 540))) # Another font.
+    
     lastFrameTime = time.time() # Used to determine if the screen should update, because there's no point in rendering graphics at 800hz if your monitor only supports 60hz.
+    
+    statusBarDims = [scrW / 10, scrH / 20]
+
+    healthBarPos = [scrW * (25 / 1920), scrH * (19 / 20) - scrH * (104 / 1080)]
+    
+    energyBarPos = [scrW * (25 / 1920), scrH * (19 / 20) - scrH * (25 / 1080)]
     
     ### CAMERA VARIABLES ###################################################################################
     
@@ -468,6 +477,8 @@ def main():
                     
                 elif event.key == K_s:
                     inputSet[1] = 1
+                elif event.key == K_t:
+                    players[0]["health"] -= 5
                 
                 #Debug tools, they zoom the camera out or in:
                 elif event.key == K_e:
@@ -708,7 +719,20 @@ def main():
                 if displayPlayerInfo:
                     for attribute in enumerate(player):
                         window.blit(fpsDisplayFont.render(str(attribute[1]) + ": " + str(player[attribute[1]]), 0, (255, 0, 0)), [relPlayerPos[0] + scrW / 32, relPlayerPos[1] + attribute[0] * 30])
-                        
+            
+            ### EVERYTHING PAST THIS POINT IS UI ###
+            
+            # Draws health and energy bar borders.
+            pygame.draw.rect(window, [32, 255, 64], pygame.Rect(healthBarPos, statusBarDims), 2)  
+            pygame.draw.rect(window, [64, 128, 255], pygame.Rect(energyBarPos, statusBarDims), 2)
+            
+            # Draws health and energy bar interiors.
+            window.fill([32, 255, 64], pygame.Rect(healthBarPos, [statusBarDims[0] * (players[0]["health"] / 100), statusBarDims[1]]))  
+            window.fill([64, 128, 255], pygame.Rect(energyBarPos, [statusBarDims[0] * (players[0]["energy"] / 100), statusBarDims[1]]))
+            
+            # Draws text over health and energy bars.
+            window.blit(monoFont.render(" HEALTH", 0, (32, 128, 16)), healthBarPos)
+            window.blit(monoFont.render(" ENERGY", 0, (16, 64, 128)), energyBarPos)
                 
             # Framerate counter. Delete these at will.
             # (but if you're going to, get rid of 'fpsDisplayFont')
