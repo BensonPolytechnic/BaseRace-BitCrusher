@@ -307,6 +307,14 @@ def main():
     
     ### DETERMINES IF DEBUG TOOLS SHOULD BE ENABLED ###
     
+    global worldSize
+        
+    worldSize = [0, 0]
+    
+    global world
+        
+    world = []
+    
     while True:
         displayPlayerInfo = input("Enable debug tools? (y/n): ")
         
@@ -317,6 +325,73 @@ def main():
         elif displayPlayerInfo.lower() == "n":
             displayPlayerInfo = False
             break
+    
+    while True:
+        fromFile = input("Import world from file? (y/n): ")
+        
+        if fromFile.lower() == "y":
+            fromFile = True
+            break
+        
+        elif fromFile.lower() == "n":
+            fromFile = False
+            break
+    
+    if fromFile:
+        
+        worldImport = open(os.path.join("data", "world", "world.txt"), "r") # Imports the world from a file, and stores its' lines in 'rawWorld'
+        rawWorld = worldImport.readlines()
+        worldImport.close()
+        del worldImport
+        
+        for line in range(len(rawWorld)):
+            rawWorld[line] = rawWorld[line].strip()
+            if line == 0:
+                continue
+            elif len(rawWorld[line]) != len(rawWorld[line - 1]):
+                pygame.quit()
+                raise IndexError("Width of the world MUST be consistent")
+
+        # The following two loops rotate the array, so to refer to a block position in the world you can write world[x][y] rather that world[y][x]
+        for i in range(len(rawWorld[0])):
+            world.append([])
+
+        for x in range(len(world)):
+            for y in range(len(rawWorld)):
+                world[x].append({"type":int(rawWorld[y][x])})
+
+        # Converts each int in 'world' to an item in a list, so it can be easily modified.
+        for line in range(len(world)):
+            world[line] = list(world[line])
+
+        del rawWorld # boop
+        
+        worldSize = [len(world), len(world[0])] # Size of the world
+    
+    else:
+        
+        
+        while True:
+            worldSize[0] = input("Width of the world (int): ")
+            
+            if worldSize[0].isdigit():
+                worldSize[0] = int(worldSize[0])
+                break
+        
+        while True:
+            worldSize[1] = input("Height of the world (int): ")
+            
+            if worldSize[1].isdigit():
+                worldSize[1] = int(worldSize[1])
+                break
+        
+        
+        
+        for x in range(worldSize[0]):
+            world.append([])
+            for y in range(worldSize[1]):
+                world[x].append({"type":0})
+    
     
     global scrW
     
@@ -387,16 +462,7 @@ def main():
     blockSprites = []
     
     startTime = time.time() # Unix time that the game was started.
-    
-    global world # The world. It is a list (corresponding to columns) of lists (corresponding to rows) of dictionaries (corresponding to block ID's).
-    
-    world = []
-    
-    worldImport = open(os.path.join("data", "world", "world.txt"), "r") # Imports the world from a file, and stores its' lines in 'rawWorld'
-    rawWorld = worldImport.readlines()
-    worldImport.close()
-    del worldImport
-    
+
     gameExit = False # Determines if the game should exit. False for running, True for exiting.
     
     t = pygame.time.Clock() # A clock for doing clock-related things, like getting FPS.
@@ -425,36 +491,7 @@ def main():
     # 1 - Black wall
     # 2 - Orange wall
     
-    
-    ### PARSES AND ROTATES THE 'rawWorld' VARIABLE IN A NEW VARIABLE CALLED 'world' ###
-    # * none of this will exist when we actually implement this.
 
-    # Checks to make sure each line in the world has the same number of characters
-    for line in range(len(rawWorld)):
-        rawWorld[line] = rawWorld[line].strip()
-        if line == 0:
-            continue
-        elif len(rawWorld[line]) != len(rawWorld[line - 1]):
-            pygame.quit()
-            raise IndexError("Width of the world MUST be consistent")
-
-    # The following two loops rotate the array, so to refer to a block position in the world you can write world[x][y] rather that world[y][x]
-    for i in range(len(rawWorld[0])):
-        world.append([])
-
-    for x in range(len(world)):
-        for y in range(len(rawWorld)):
-            world[x].append({"type":int(rawWorld[y][x])})
-
-    # Converts each int in 'world' to an item in a list, so it can be easily modified.
-    for line in range(len(world)):
-        world[line] = list(world[line])
-
-    del rawWorld # boop
-    
-    global worldSize
-    
-    worldSize = [len(world), len(world[0])] # Size of the world
     
     #########################################################################################################################################################################################
     ### MAIN LOOP ###########################################################################################################################################################################
@@ -486,8 +523,7 @@ def main():
                 
                 #Debug tools, they zoom the camera out or in:
                 elif event.key == K_e:
-                    print(collideAngle)
-                    print(playerDelta)
+                    cameraZoom = 60.5
                     
                 elif event.key == K_f:
                     cameraZoom = 16
