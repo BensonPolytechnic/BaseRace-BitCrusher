@@ -1,0 +1,20 @@
+Weak block
+Medium Block
+Strong Block
+Explosives
+Tripwire
+AND gate
+OR gate
+XOR gate
+NOT gate
+Switch
+Hidden floor button thing
+Mimic
+Piston*
+Hazard
+Laser
+World Event Detector
+[Impenetrable edge-of-world block thing]
+[Air]
+
+*Requires 2 parts
