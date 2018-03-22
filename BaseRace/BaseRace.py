@@ -1,8 +1,13 @@
 # *** GRAPHICS ENGINE ***
 # This is a thing that makes pixels on a screen turn pretty colors
 
-import pygame, os, time, math
+import pygame, os, time, math, importlib.util
 from pygame.locals import *
+
+spriteImportFunc = importlib.util.spec_from_file_location("blocksprites.py", os.path.join("data", "blocksprites.py"))
+blocksprites = importlib.util.module_from_spec(spriteImportFunc)
+spriteImportFunc.loader.exec_module(blocksprites)
+
 
 pygame.init()
 pygame.font.init()
@@ -358,7 +363,7 @@ def main():
 
         for x in range(len(world)):
             for y in range(len(rawWorld)):
-                world[x].append({"type":int(rawWorld[y][x])})
+                world[x].append({"type":int(rawWorld[y][x]), "state":0})
 
         # Converts each int in 'world' to an item in a list, so it can be easily modified.
         for line in range(len(world)):
@@ -390,7 +395,7 @@ def main():
         for x in range(worldSize[0]):
             world.append([])
             for y in range(worldSize[1]):
-                world[x].append({"type":0})
+                world[x].append({"type":0, "state":0})
     
     
     global scrW
@@ -457,10 +462,6 @@ def main():
     
     ### WORLD VARIABLES ###################################################################################
     
-    blocks = [] # List of block types. These will be defined in a loop.
-
-    blockSprites = []
-    
     startTime = time.time() # Unix time that the game was started.
 
     gameExit = False # Determines if the game should exit. False for running, True for exiting.
@@ -472,26 +473,35 @@ def main():
     #########################################################################################################################################################################################
     
     ### FILLS OUT THE "BLOCKS" LIST WITH COLORED SURFACES, WHOSE INDEX CORRESPONDS TO BLOCK ID'S ###
-
-    blockSprites = []
     
-    for block in range(3):
-        blocks.append(pygame.Surface([scrW / cameraZoom, scrW / cameraZoom]).convert())
+    blocks = {} # List of block types. These will be defined in a loop.
+    
+    
+    blocks[0] = {}
+    blocks[0][0] = blocksprites.air(scrW / cameraZoom, 0)
+    
+    blocks[1] = {}
+    blocks[1][0] = blocksprites.weak(scrW / cameraZoom, 0)
+    
+    blocks[2] = {}
+    blocks[2][0] = blocksprites.medium(scrW / cameraZoom, 0)
+    
+    blocks[3] = {}
+    blocks[3][0] = blocksprites.strong(scrW / cameraZoom, 0)
+    
 
-    blocks[0].fill(colors["grey"])
-    blocks[0].fill(colors["white"], pygame.Rect([(scrW / cameraZoom) / 40, (scrW / cameraZoom) / 40], [(scrW / cameraZoom) - (scrW / cameraZoom) / 20, (scrW / cameraZoom) - (scrW / cameraZoom) / 20]))
-    blocks[1].fill(colors["black"])
-    blocks[2].fill(colors["orange"])
+    blockSprites = {}
 
-    for sprite in blocks:
-        blockSprites.append(sprite.copy())
+    for block in blocks:
+        blockSprites[block] = {}
+        
+        for state in blocks[block]:
+            blockSprites[block][state] = blocks[block][state].copy()
 
     # Placeholder block ID list:
     # 0 - Air
     # 1 - Black wall
     # 2 - Orange wall
-    
-
     
     #########################################################################################################################################################################################
     ### MAIN LOOP ###########################################################################################################################################################################
@@ -711,16 +721,19 @@ def main():
             if cameraZoom == 16: # This is for maintaining pixel-perfectness for when the camera is at default zoom.
                 
                 # Loops through the block sprites and resizes them to a perfect whole-number side-length for 1920x1080
-                for sprite in range(len(blocks)):
-                    blockSprites[sprite] = blocks[sprite].copy()
+                for block in blocks:
+                    for state in blocks[block]:
+                        
+                        blockSprites[block][state] = blocks[block][state].copy()
                 # Note that if this were written in any other programming language on Earth, this would be a
                 # huge and disgusting memory leak, because the previous sprites aren't actually deleted.
                 
             else: # If the camera is no longer in the default zoom, (for quick camera pans and zoom-outs), don't bother with integer division
                 
                 #Same thing as the other loop, it just doesn't bother with integer division and rounds up to the nearest pixel.
-                for sprite in range(len(blocks)):
-                    blockSprites[sprite] = pygame.transform.scale(blocks[sprite].copy(), [int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1])
+                for block in blocks:
+                    for state in blocks[block]:
+                        blockSprites[block][state] = pygame.transform.scale(blocks[block][state].copy(), [int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1])
                     
         
         # If you screw with the following line, all of the sprites will be resized every single frame even if they don't have to be.
@@ -764,7 +777,7 @@ def main():
                             continue
                         
                         else:
-                            window.blit(blockSprites[world[column][row]["type"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)]) # Blit the corresponding sprite to the block type in the column and row in the relative position of the block on the screen.
+                            window.blit(blockSprites[world[column][row]["type"]][world[column][row]["state"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)]) # Blit the corresponding sprite to the block type in the column and row in the relative position of the block on the screen.
                             # If the above line, or anything in this loop breaks, make it so I'm the one to fix it.
                             # I don't want to subject this shitshow to anyone else.
                         
