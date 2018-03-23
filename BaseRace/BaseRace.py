@@ -489,6 +489,12 @@ def main():
     blocks[3] = {}
     blocks[3][0] = blocksprites.strong(scrW / cameraZoom, 0)
     
+    blocks[4] = {}
+    blocks[4][0] = blocksprites.andGate(scrW / cameraZoom, 0)
+    
+    blocks[5] = {}
+    blocks[5][0] = blocksprites.orGate(scrW / cameraZoom, 0)
+    
 
     blockSprites = {}
 
@@ -686,9 +692,6 @@ def main():
                             collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
                             playerDelta = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
                     
-
-                        
-                    
                 
                 
                 if players[0]["pos"][0] >= block[0] - 0.05 and players[0]["pos"][0] <= block[0] + 1.05:
@@ -707,6 +710,7 @@ def main():
                         
         # Changes player position by playerDelta
         players[0]["pos"] = [players[0]["pos"][0] + playerDelta[0], players[0]["pos"][1] + playerDelta[1]]
+        
         
         # Changes camera position, with smoothness.
         # Also allows the player to look around with the mouse.
