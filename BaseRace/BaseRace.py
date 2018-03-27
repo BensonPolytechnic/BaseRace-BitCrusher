@@ -287,6 +287,8 @@ def toDeg(rotation):
     elif rotation[1] < 0:
         return math.atan(rotation[0]) * (180 / math.pi) + 180
 
+
+
 # This takes an angle in degrees and returns a slope/direction list.
 def toSlope(deg):
     if deg == 90.0:
@@ -304,25 +306,38 @@ def toSlope(deg):
     else:
         return [math.tan((deg - 360) * (math.pi / 180)), 1]
     
+    
 
 # Mildly important.
 def main():
     
-    ### DISPLAY VARIABLES ###################################################################################
     
-    ### DETERMINES IF DEBUG TOOLS SHOULD BE ENABLED ###
-    
+    # This is the size of the world. It is a list of two positive integer values that correspond to the width and height of the world.
+    # It is given said values in the World Building thing.
     global worldSize
-        
     worldSize = [0, 0]
     
+    
+    # The world. It is a multidimensional array containing block information. The index of the outermost list is the x position of a block,
+    # the index of the second list is the y position of a block, and then there is a dictionary containing various block attributes.
+    #
+    # An example of accessing an attribute would be 'world[12][17]["type"]', which would return the type of block located at position (12, 17).
+    # Another would be world[3][27]["health"], which returns the health (0 - 100) of the block at position (3, 27).
+    #
+    # Special blocks such as mimics may receive unique attributes in the future, such as a value that indicates what sprite the block should display.
+    # All of the attributes that every block in the world has (including air) are as follows:
+    # 'type' - An integer value between 0 and 17 (subject to change) that indicates what ID the block has.
+    # 'state' - An integer that indicates what state a block is. For normal blocks such as air (ID: 0) and structural blocks, this is always 0.
+    # 'health' - A number between 0 and 100 that indicates how much health a block has.
     global world
-        
     world = []
     
+    
+    ### WORLD BUILDING AND DEBUG TOOLS ###
     while True:
-        displayPlayerInfo = input("Enable debug tools? (y/n): ")
+        displayPlayerInfo = input("Enable debug tools? (y/n): ") # Determines if debug tools should be enabled.
         
+        # Input validation.
         if displayPlayerInfo.lower() == "y":
             displayPlayerInfo = True
             break
@@ -332,8 +347,9 @@ def main():
             break
     
     while True:
-        fromFile = input("Import world from file? (y/n): ")
+        fromFile = input("Import world from file? (y/n): ") # Determines if the world should be loaded from the file 'world.txt'
         
+        # Input validation.
         if fromFile.lower() == "y":
             fromFile = True
             break
@@ -342,20 +358,34 @@ def main():
             fromFile = False
             break
     
+    
+    # If the world is being loaded from a file, this reads 'world.txt' and builds 'world' from it.
     if fromFile:
         
-        worldImport = open(os.path.join("data", "world", "world.txt"), "r") # Imports the world from a file, and stores its' lines in 'rawWorld'
+        # Loads world.txt
+        worldImport = open(os.path.join("data", "world", "world.txt"), "r")
+        
+        # Reads world.txt
         rawWorld = worldImport.readlines()
+        
+        # Closes world.txt
         worldImport.close()
+        
+        # Deletes the file object because it isn't needed anymore.
         del worldImport
         
+        # Ensures that the length of each line in world.txt is the same, because holy
+        # shit I don't want to implement support for non-rectangular worlds.
         for line in range(len(rawWorld)):
             rawWorld[line] = rawWorld[line].strip()
             if line == 0:
                 continue
+            
+            # If the length line currently being read is not the same length as the previous, this closes the program.
             elif len(rawWorld[line]) != len(rawWorld[line - 1]):
                 pygame.quit()
                 raise IndexError("Width of the world MUST be consistent")
+            
 
         # The following two loops rotate the array, so to refer to a block position in the world you can write world[x][y] rather that world[y][x]
         for i in range(len(rawWorld[0])):
@@ -363,110 +393,142 @@ def main():
 
         for x in range(len(world)):
             for y in range(len(rawWorld)):
-                world[x].append({"type":int(rawWorld[y][x]), "state":0})
+                if rawWorld[y][x] != "0":
+                    world[x].append({"type":int(rawWorld[y][x]), "state":0, "health":100})
+                
+                else:
+                    world[x].append({"type":0, "state":0, "health":0})
 
-        # Converts each int in 'world' to an item in a list, so it can be easily modified.
-        for line in range(len(world)):
-            world[line] = list(world[line])
 
-        del rawWorld # boop
+        # boop
+        del rawWorld
         
-        worldSize = [len(world), len(world[0])] # Size of the world
+        # Defines worldSize because its probably used for something important i dont fukin know anymore.
+        worldSize = [len(world), len(world[0])]
     
     else:
         
-        
         while True:
-            worldSize[0] = input("Width of the world (int): ")
+            worldSize[0] = input("Width of the world (int): ") # Gets the width of the world from console input.
             
+            # Input validation
             if worldSize[0].isdigit():
                 worldSize[0] = int(worldSize[0])
                 break
         
+        
         while True:
-            worldSize[1] = input("Height of the world (int): ")
+            worldSize[1] = input("Height of the world (int): ") # Gets the height of the world from console input.
             
+            # Input validation
             if worldSize[1].isdigit():
                 worldSize[1] = int(worldSize[1])
                 break
         
         
-        
+        # Builds a world full of air that is 'worldSize[0]' by 'worldSize[1]'.
         for x in range(worldSize[0]):
             world.append([])
             for y in range(worldSize[1]):
                 world[x].append({"type":0, "state":0})
     
+    ### DISPLAY AND UI VALUES ##############################################################################
     
+    # Width of the screen.
     global scrW
+    scrW = pygame.display.Info().current_w
     
-    scrW = pygame.display.Info().current_w # Width of the screen
-    
+    # Height of the screen.
     global scrH
-    
-    scrH = pygame.display.Info().current_h # Height of the screen
+    scrH = pygame.display.Info().current_h
 
-    window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF) # The screen
+    # The screen.
+    window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
     
+    # there is literally no point to this the game is fullscreen.
     pygame.display.set_caption("BaseRace")
+     
+    #colors = {"orange":[255, 128, 0], "blue":[0, 128, 255], "white":[255, 255, 255], "black":[0, 0, 0], "dark blue":[0, 64, 128], "dark orange":[128, 64, 0], "green":[0, 255, 0], "grey":[223, 223, 223]} # Dictionary of colors
     
-    colors = {"orange":[255, 128, 0], "blue":[0, 128, 255], "white":[255, 255, 255], "black":[0, 0, 0], "dark blue":[0, 64, 128], "dark orange":[128, 64, 0], "green":[0, 255, 0], "grey":[223, 223, 223]} # Dictionary of colors
+    # Font to display the fps with. Also used for displaying debug stuff. 
+    fpsDisplayFont = pygame.font.Font(os.path.join("data", "fonts", "desc.ttf"), int(scrH / 50))
     
-    fpsDisplayFont = pygame.font.Font(os.path.join("data", "fonts", "desc.ttf"), int(scrH / 50)) # Font to display the fps with. Delete this if you're removing the fps counter.
+    # Font that the text on top of the health and energy bars use.
+    monoFont = pygame.font.Font(os.path.join("data", "fonts", "VT323-Regular.ttf"), int(scrH * (25 / 540)))
     
-    monoFont = pygame.font.Font(os.path.join("data", "fonts", "VT323-Regular.ttf"), int(scrH * (25 / 540))) # Another font.
+    # Used to determine if the screen should update, because there's no point in rendering graphics at 800hz if your monitor only supports 60hz.
+    lastFrameTime = time.time()
     
-    lastFrameTime = time.time() # Used to determine if the screen should update, because there's no point in rendering graphics at 800hz if your monitor only supports 60hz.
-    
+    # Width and height of the health and energy bars, in terms of a fraction of the screen size.
     statusBarDims = [scrW / 10, scrH / 20]
 
+    # Position of the top-left corner of the health bar on the screen.
     healthBarPos = [scrW * (25 / 1920), scrH * (19 / 20) - scrH * (104 / 1080)]
     
+    # Position of the top-left corner of the energy bar on the screen.
     energyBarPos = [scrW * (25 / 1920), scrH * (19 / 20) - scrH * (25 / 1080)]
+    
     
     ### CAMERA VARIABLES ###################################################################################
     
+    # Position of the camera
     global cameraPos
+    cameraPos = [16.0, 16.0]
     
-    cameraPos = [16.0, 16.0] # Position of the camera
-    
+    # Number of blocks that can fit in the width of the screen
     global cameraZoom
+    cameraZoom = 16
     
-    cameraZoom = 16 # Number of blocks that can fit in the width of the screen
+    # DO NOT TOUCH DURING THE MAIN LOOP. Used to determine if sprites should be resized.
+    previousZoom = 16
     
-    previousZoom = 16 # DO NOT TOUCH DURING THE MAIN LOOP. Used to determine if sprites should be resized.
+    # Sprite that is put on top of blocks in the world for displaying their health.
+    healthSprite = pygame.Surface([scrW / cameraZoom, scrW / cameraZoom]).convert_alpha()
     
     ### PLAYER VARIABLES ###################################################################################
     
-    teams = [{"color":colors["blue"]}, {"color":colors["orange"]}] # Player teams. Currently only contains information on team color.
+    # Player teams. Currently only contains information on team color. 
+    teams = [{"color":[0, 128, 255]}, {"color":[255, 128, 0]}]
     
+    # Players. Each player is a dictionary that contains the following values:
+    # team - Integer value that correspons to the index of the list 'teams'. Used to determine what color the player should be and if their laser should be able to hit other players.
+    # health - Value between 0 and 100 that reprisents how much health a player has.
+    # pos - List of two floats that correspond to the player's position.
+    # energy - Value between 0 and 100 that reprisents how much energy a player has.
+    # rotation - A list containing a slope and direction.
+    # isShooting - Whether or not the player is shooting.
     global players
-    
     players = [{"team":0, "health":100, "pos":[16.0, 16.0], "energy":100, "rotation":[0, 0], "isShooting":False}, {"team":0, "health":100, "pos":[12.0, 4.0], "energy":100, "rotation":[-0.5, 1], "isShooting":False}, {"team":1, "health":100, "pos":[18.0, 29.0], "energy":100, "rotation":[5.1, 1], "isShooting":False}, {"team":1, "health":100, "pos":[18.0, 27.0], "energy":100, "rotation":[2.3, -1], "isShooting":True}]
     
-    cornerCollideFlag = False
-    
+    # Radius of the player's body
     global playerRadius
+    playerRadius = int(scrW / (2 * cameraZoom))
     
-    playerRadius = int(scrW / (2 * cameraZoom)) # Radius of the player's body
+    # Vector to change the player's position by.
+    playerDelta = [0.0, 0.0]
     
-    playerDelta = [0.0, 0.0] # Vectors to change the player's position by.
-    
+    # Speed of all of the players.
     playerSpeed = 0.01
     
-    relPlayerPos = [scrW // 2, scrH // 2] # Relative position of the player on the screen, in pixels.
+    # Relative position of the player on the screen, in pixels.
+    relPlayerPos = [scrW // 2, scrH // 2]
     
-    playerLaserDist = int((3 * scrW) / (8 * cameraZoom)) # Distance from the center of the player's body to the center of the darker-colored circle that shows where they're facing.
+    # Distance from the center of the player's body to the center of the darker-colored circle that shows where they're facing.
+    playerLaserDist = int((3 * scrW) / (8 * cameraZoom))
     
-    inputSet = [0, 0, 0, 0, 0, 0] # Used to record keystrokes of directional input and mouse input. The order is [W, S, A, D, LCLICK, RCLICK]. 1 = being pushed and 0 = not being pushed.
+    # Used to record keystrokes of directional input and mouse input. The order is [W, S, A, D, LCLICK, RCLICK]. 1 = being pushed and 0 = not being pushed.
+    inputSet = [0, 0, 0, 0, 0, 0]
     
     ### WORLD VARIABLES ###################################################################################
     
-    startTime = time.time() # Unix time that the game was started.
-
-    gameExit = False # Determines if the game should exit. False for running, True for exiting.
+    # Time that the game was started.
+    startTime = time.time()
     
-    t = pygame.time.Clock() # A clock for doing clock-related things, like getting FPS.
+    # Determines if the game should exit. False for running, True for exiting.
+    gameExit = False
+    
+    # A clock for doing clock-related things, like getting FPS.
+    t = pygame.time.Clock()
     
     #########################################################################################################################################################################################
     ### INITIALIZATION ######################################################################################################################################################################
@@ -474,34 +536,29 @@ def main():
     
     ### FILLS OUT THE "BLOCKS" LIST WITH COLORED SURFACES, WHOSE INDEX CORRESPONDS TO BLOCK ID'S ###
     
-    blocks = {} # List of block types. These will be defined in a loop.
+
+    blocks = []
+    blockSprites = []
     
+    for block in range(6):
+        blocks.append({})
+        blockSprites.append({})
     
-    blocks[0] = {}
     blocks[0][0] = blocksprites.air(scrW / cameraZoom, 0)
     
-    blocks[1] = {}
     blocks[1][0] = blocksprites.weak(scrW / cameraZoom, 0)
     
-    blocks[2] = {}
     blocks[2][0] = blocksprites.medium(scrW / cameraZoom, 0)
     
-    blocks[3] = {}
     blocks[3][0] = blocksprites.strong(scrW / cameraZoom, 0)
     
-    blocks[4] = {}
     blocks[4][0] = blocksprites.andGate(scrW / cameraZoom, 0)
     
-    blocks[5] = {}
     blocks[5][0] = blocksprites.orGate(scrW / cameraZoom, 0)
     
 
-    blockSprites = {}
-
-    for block in blocks:
-        blockSprites[block] = {}
-        
-        for state in blocks[block]:
+    for block in range(len(blocks)):
+        for state in range(len(blocks[block])):
             blockSprites[block][state] = blocks[block][state].copy()
 
     # Placeholder block ID list:
@@ -582,6 +639,9 @@ def main():
             
         else:
             players[0]["isShooting"] = False
+        
+        
+        
         
         # Based on what keys are being pressed (WSAD, or the first four values in inputSet, respectively),
         # this changes playerDelta.
@@ -722,12 +782,15 @@ def main():
         
             playerLaserDist = int((3 * scrW) / (8 * cameraZoom)) # Scales the distance from the player's laser to the player
             
+            
             if cameraZoom == 16: # This is for maintaining pixel-perfectness for when the camera is at default zoom.
                 
+                healthSprite = pygame.Surface([scrW / cameraZoom, scrW / cameraZoom]).convert_alpha()
+                healthSprite.fill([0, 0, 0, 64])
+                
                 # Loops through the block sprites and resizes them to a perfect whole-number side-length for 1920x1080
-                for block in blocks:
-                    for state in blocks[block]:
-                        
+                for block in range(len(blocks)):
+                    for state in range(len(blocks[block])):
                         blockSprites[block][state] = blocks[block][state].copy()
                 # Note that if this were written in any other programming language on Earth, this would be a
                 # huge and disgusting memory leak, because the previous sprites aren't actually deleted.
@@ -735,10 +798,13 @@ def main():
             else: # If the camera is no longer in the default zoom, (for quick camera pans and zoom-outs), don't bother with integer division
                 
                 #Same thing as the other loop, it just doesn't bother with integer division and rounds up to the nearest pixel.
-                for block in blocks:
-                    for state in blocks[block]:
+                        
+                for block in range(len(blocks)):
+                    for state in range(len(blocks[block])):
                         blockSprites[block][state] = pygame.transform.scale(blocks[block][state].copy(), [int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1])
-                    
+                
+                healthSprite = pygame.Surface([int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1]).convert_alpha()
+                healthSprite.fill([0, 0, 0, 64])
         
         # If you screw with the following line, all of the sprites will be resized every single frame even if they don't have to be.
         
@@ -764,7 +830,7 @@ def main():
                 cameraPos[1] = worldSize[1] - (cameraZoom * (scrH / scrW)) / 2 # Move the camera back into the world if the above is true.
                 
         else: # If the camera DOES exceed the world size, meaning restricting it to the world is impossible:
-            window.fill(colors["white"]) # Fill the screen with white (or whatever we decide to make the color of air in the future), so there aren't weird graphical artifacts.
+            window.fill([255, 255, 255]) # Fill the screen with white (or whatever we decide to make the color of air in the future), so there aren't weird graphical artifacts.
 
             
         # This the important thing.
@@ -781,7 +847,17 @@ def main():
                             continue
                         
                         else:
-                            window.blit(blockSprites[world[column][row]["type"]][world[column][row]["state"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)]) # Blit the corresponding sprite to the block type in the column and row in the relative position of the block on the screen.
+                         # Blit the corresponding sprite to the block type in the column and row in the relative position of the block on the screen.
+                            
+                            if world[column][row]["type"] != 0 and world[column][row]["health"] != 100:
+                                window.blit(blockSprites[world[column][row]["type"]][world[column][row]["state"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)])
+                                healthSprite.fill([0, 0, 0, 64])
+                                healthSprite.fill([0, 0, 0, 0], pygame.Rect([(healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / 100), (healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / 100)], [healthSprite.get_width() * (world[column][row]["health"] / 100), healthSprite.get_width() * (world[column][row]["health"] / 100)]))
+                                window.blit(healthSprite, getScreenPos([column, row]))
+                            
+                            else:
+                                window.blit(blockSprites[world[column][row]["type"]][world[column][row]["state"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)])
+                                
                             # If the above line, or anything in this loop breaks, make it so I'm the one to fix it.
                             # I don't want to subject this shitshow to anyone else.
                         
@@ -791,6 +867,7 @@ def main():
                             
                             ########## Uncomment the following line to display block positions (terrible performance): ##########
                             #window.blit(fpsDisplayFont.render("(" + str(column) + ", " + str(row) + ")", 0, (255, 0, 0)), [(column - cameraPos[0] + (cameraZoom // 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) // 2) * (scrW / cameraZoom) + (scrW / (cameraZoom * 2))])
+            
             
             # Displays the player's lasers, if they're firing
             for player in players:
@@ -876,6 +953,7 @@ def main():
         
             #Updates the screen
             lastFrameTime = time.time()
+            
             pygame.display.flip()
 
     pygame.quit()

@@ -1,0 +1,27 @@
+Eventually this will become an actual data file that the program opens and loads block stats from.
+For now it's just a list of stuff.
+
+Square brackets around a block name implies it does not exist in the player inventory.
+
+
+		       (higher is weaker)
+ID | Name            | Damage Multiplier    | Special Attributes
+0    [Air]             N/A
+1    Weak block        50
+2    Medium Block      25
+3    Strong Block      12.5
+4    Explosives        100                   fuse
+5    Tripwire          1.5
+6    AND gate          1.0
+7    OR gate           1.0
+8    XOR gate          1.0
+9    NOT gate          1.0
+10   Switch            0.5                   rotation
+11   Floor button      1.0 (Melee only)
+12   Mimic             Depends (2.0 - 6.0)   mimic
+13   Piston*           2.0                   rotation
+14   Hazard            2.0
+15   Laser             1.0                   rotation
+16   Event Detector    1.0
+17   Goo               1.5 (Melee only)
+18   [World Edge]      N/A (+inf)
