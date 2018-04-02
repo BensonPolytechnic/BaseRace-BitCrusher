@@ -398,6 +398,9 @@ def main():
                 
                 else:
                     world[x].append({"type":0, "state":0, "health":0})
+        
+        for x in range(32):
+            world[x][0]["health"] = 100 - (x * (1 / 32) * 100)
 
 
         # boop
@@ -540,7 +543,7 @@ def main():
     blocks = []
     blockSprites = []
     
-    for block in range(6):
+    for block in range(8):
         blocks.append({})
         blockSprites.append({})
     
@@ -555,6 +558,10 @@ def main():
     blocks[4][0] = blocksprites.andGate(scrW / cameraZoom, 0)
     
     blocks[5][0] = blocksprites.orGate(scrW / cameraZoom, 0)
+    
+    blocks[6][0] = blocksprites.xorGate(scrW / cameraZoom, 0)
+    
+    blocks[7][0] = blocksprites.notGate(scrW / cameraZoom, 0)
     
 
     for block in range(len(blocks)):
