@@ -547,21 +547,42 @@ def main():
         blocks.append({})
         blockSprites.append({})
     
-    blocks[0][0] = blocksprites.air(scrW / cameraZoom, 0)
+    if scrW % cameraZoom == 0:
+
+        blocks[0][0] = blocksprites.air(scrW / cameraZoom, 0)
+        
+        blocks[1][0] = blocksprites.weak(scrW / cameraZoom, 0)
+        
+        blocks[2][0] = blocksprites.medium(scrW / cameraZoom, 0)
+        
+        blocks[3][0] = blocksprites.strong(scrW / cameraZoom, 0)
+        
+        blocks[4][0] = blocksprites.andGate(scrW / cameraZoom, 0)
+        
+        blocks[5][0] = blocksprites.orGate(scrW / cameraZoom, 0)
+        
+        blocks[6][0] = blocksprites.xorGate(scrW / cameraZoom, 0)
+        
+        blocks[7][0] = blocksprites.notGate(scrW / cameraZoom, 0)
     
-    blocks[1][0] = blocksprites.weak(scrW / cameraZoom, 0)
-    
-    blocks[2][0] = blocksprites.medium(scrW / cameraZoom, 0)
-    
-    blocks[3][0] = blocksprites.strong(scrW / cameraZoom, 0)
-    
-    blocks[4][0] = blocksprites.andGate(scrW / cameraZoom, 0)
-    
-    blocks[5][0] = blocksprites.orGate(scrW / cameraZoom, 0)
-    
-    blocks[6][0] = blocksprites.xorGate(scrW / cameraZoom, 0)
-    
-    blocks[7][0] = blocksprites.notGate(scrW / cameraZoom, 0)
+    else:
+        print("weird screen resolution")
+        
+        blocks[0][0] = blocksprites.air(scrW / cameraZoom + 1, 0)
+        
+        blocks[1][0] = blocksprites.weak(scrW / cameraZoom + 1, 0)
+        
+        blocks[2][0] = blocksprites.medium(scrW / cameraZoom + 1, 0)
+        
+        blocks[3][0] = blocksprites.strong(scrW / cameraZoom + 1, 0)
+        
+        blocks[4][0] = blocksprites.andGate(scrW / cameraZoom + 1, 0)
+        
+        blocks[5][0] = blocksprites.orGate(scrW / cameraZoom + 1, 0)
+        
+        blocks[6][0] = blocksprites.xorGate(scrW / cameraZoom + 1, 0)
+        
+        blocks[7][0] = blocksprites.notGate(scrW / cameraZoom + 1, 0)
     
 
     for block in range(len(blocks)):
