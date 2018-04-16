@@ -69,3 +69,28 @@ def notGate(pixels, state):
         pygame.draw.polygon(sprite, [192, 192, 192], [[pixels / 2, pixels / 6], [pixels / 12, (11 * pixels) / 12], [(11 * pixels) / 12, (11 * pixels) / 12]])
         pygame.draw.circle(sprite, [192, 192, 192], [int(pixels / 2), int(pixels / 6)], int(pixels / 12), 0)
         return sprite
+
+def sprite(id, pixels, state):
+    if id == 0:
+        return air(pixels, state)
+    
+    if id == 1:
+        return weak(pixels, state)
+    
+    if id == 2:
+        return medium(pixels, state)
+    
+    if id == 3:
+        return strong(pixels, state)
+    
+    if id == 4:
+        return andGate(pixels, state)
+    
+    if id == 5:
+        return orGate(pixels, state)
+    
+    if id == 6:
+        return xorGate(pixels, state)
+    
+    if id == 7:
+        return notGate(pixels, state)

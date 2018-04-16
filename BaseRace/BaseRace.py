@@ -4,7 +4,7 @@
 import pygame, os, time, math, importlib.util
 from pygame.locals import *
 
-spriteImportFunc = importlib.util.spec_from_file_location("blocksprites.py", os.path.join("data", "blocksprites.py"))
+spriteImportFunc = importlib.util.spec_from_file_location("blocksprites.py", os.path.join("data", "blocks", "blocksprites.py"))
 blocksprites = importlib.util.module_from_spec(spriteImportFunc)
 spriteImportFunc.loader.exec_module(blocksprites)
 
@@ -70,7 +70,7 @@ def raycast(point, slope, dir=0, team=None):
             if xInt[0] >= worldSize[0] + offSetX or xInt[0] <= 0:
                 collisions.append(xInt)
                 break
-            elif world[xInt[0] + offSetX][int(xInt[1])]["type"] != 0 or xInt[0] >= worldSize[0] + offSetX or xInt[0] <= 0:
+            elif blockData[world[xInt[0] + offSetX][int(xInt[1])]["type"]]["collidable"] or xInt[0] >= worldSize[0] + offSetX or xInt[0] <= 0:
                 collisions.append(xInt)
                 break
             
@@ -92,7 +92,7 @@ def raycast(point, slope, dir=0, team=None):
         yInt = [point[0], int(point[1])]
         
         while True:
-            if world[int(yInt[0])][yInt[1] - 1]["type"] != 0 or yInt[1] <= 0:
+            if blockData[world[int(yInt[0])][yInt[1] - 1]["type"]]["collidable"] or yInt[1] <= 0:
                 collisions.append(yInt)
                 break
             else:
@@ -113,7 +113,7 @@ def raycast(point, slope, dir=0, team=None):
             if yInt[1] >= worldSize[1]:
                 collisions.append(yInt)
                 break
-            elif world[int(yInt[0])][yInt[1]]["type"] != 0:
+            elif blockData[world[int(yInt[0])][yInt[1]]["type"]]["collidable"]:
                 collisions.append(yInt)
                 break
             else:
@@ -196,7 +196,7 @@ def raycast(point, slope, dir=0, team=None):
                 
                 else:
                     # This checks if xInt is intersecting with a block in the world.
-                    if world[int(xInt[0]) + offSetX][int(xInt[1])]["type"] != 0:
+                    if blockData[world[int(xInt[0]) + offSetX][int(xInt[1])]["type"]]["collidable"]:
                         collisions.append(xInt)
                         break
                     
@@ -213,7 +213,7 @@ def raycast(point, slope, dir=0, team=None):
                 
                 else:
                     # This checks if yInt is intersecting with a block in the world.
-                    if world[int(yInt[0])][int(yInt[1]) + offSetY]["type"] != 0:
+                    if blockData[world[int(yInt[0])][int(yInt[1]) + offSetY]["type"]]["collidable"]:
                         collisions.append(yInt)
                         break
                     
@@ -264,7 +264,68 @@ def raycast(point, slope, dir=0, team=None):
                 nearestCollision = collisions[i]
         
         return nearestCollision
+
+
+def importBlockData(pixels):
+    blockInfo = [] # Stores lines of 'blockdata.txt'
     
+    blockInfoImport = open(os.path.join("data", "blocks", "blockdata.txt"), "r") # File object used to import data
+    
+    blockFileData = blockInfoImport.readlines() # Reads the lines
+
+    # Deletes the file object because it isn't needed anymore.
+    blockInfoImport.close()
+    del blockInfoImport
+
+    blockLine = 0 # Value used for incrementing through sets of block data
+
+    # Strips whitespace off of file data
+    for line in range(len(blockFileData)):
+        blockFileData[line] = blockFileData[line].strip()
+    
+    # pain is all
+    for line in range(len(blockFileData)):
+        if blockFileData[line] == "{":
+            blockInfo.append({})
+            blockLine = 0
+            while True:
+                if blockFileData[line + blockLine] == "}":
+                    break
+                
+                elif blockFileData[line + blockLine][:blockFileData[line+blockLine].find(".")] == "int":
+                    blockInfo[len(blockInfo) - 1][blockFileData[line + blockLine][blockFileData[line + blockLine].find(".") + 1:blockFileData[line + blockLine].find(":")]] = int(blockFileData[line + blockLine][blockFileData[line + blockLine].find(":") + 1:blockFileData[line + blockLine].find(";")])
+                
+                elif blockFileData[line + blockLine][:blockFileData[line+blockLine].find(".")] == "bool":
+                    print(blockFileData[line + blockLine][blockFileData[line + blockLine].find(":") + 1:blockFileData[line + blockLine].find(";")])
+                    blockInfo[len(blockInfo) - 1][blockFileData[line + blockLine][blockFileData[line + blockLine].find(".") + 1:blockFileData[line + blockLine].find(":")]] = bool(int(blockFileData[line + blockLine][blockFileData[line + blockLine].find(":") + 1:blockFileData[line + blockLine].find(";")]))
+                
+                elif blockFileData[line + blockLine][:blockFileData[line+blockLine].find(".")] == "str":
+                    blockInfo[len(blockInfo) - 1][blockFileData[line + blockLine][blockFileData[line + blockLine].find(".") + 1:blockFileData[line + blockLine].find(":")]] = blockFileData[line + blockLine][blockFileData[line + blockLine].find(":") + 1:blockFileData[line + blockLine].find(";")]
+                
+                blockLine += 1 # bebebebebebebebebe
+
+    # stupid fucking piece of shit
+    for block in range(len(blockInfo)):
+        blockInfo[block]["sprites"] = []
+
+        if blockInfo[block]["rotatable"]:
+            for state in range(blockInfo[block]["states"]):
+                blockInfo[block]["sprites"].append([])
+                blockInfo[block]["sprites"][state].append(blocksprites.sprite(block, pixels, state))
+                blockInfo[block]["sprites"][state].append(pygame.transform.rotate(blocksprites.sprite(block, pixels, state), -90))
+                blockInfo[block]["sprites"][state].append(pygame.transform.rotate(blocksprites.sprite(block, pixels, state), -180))
+                blockInfo[block]["sprites"][state].append(pygame.transform.rotate(blocksprites.sprite(block, pixels, state), -270))
+            
+        else:
+            for state in range(blockInfo[block]["states"]):
+                blockInfo[block]["sprites"].append([blocksprites.sprite(block, pixels, state)])
+            
+    
+    print(blockInfo)
+    return blockInfo # eeeeeeeeeeeeee
+
+
+
 
 # This takes a slope and a direction (similar to 'raycast') and returns an angle in degrees.
 # which makes server communication slightly less painful.
@@ -311,29 +372,6 @@ def toSlope(deg):
 # Mildly important.
 def main():
     
-    
-    # This is the size of the world. It is a list of two positive integer values that correspond to the width and height of the world.
-    # It is given said values in the World Building thing.
-    global worldSize
-    worldSize = [0, 0]
-    
-    
-    # The world. It is a multidimensional array containing block information. The index of the outermost list is the x position of a block,
-    # the index of the second list is the y position of a block, and then there is a dictionary containing various block attributes.
-    #
-    # An example of accessing an attribute would be 'world[12][17]["type"]', which would return the type of block located at position (12, 17).
-    # Another would be world[3][27]["health"], which returns the health (0 - 100) of the block at position (3, 27).
-    #
-    # Special blocks such as mimics may receive unique attributes in the future, such as a value that indicates what sprite the block should display.
-    # All of the attributes that every block in the world has (including air) are as follows:
-    # 'type' - An integer value between 0 and 17 (subject to change) that indicates what ID the block has.
-    # 'state' - An integer that indicates what state a block is. For normal blocks such as air (ID: 0) and structural blocks, this is always 0.
-    # 'health' - A number between 0 and 100 that indicates how much health a block has.
-    global world
-    world = []
-    
-    
-    ### WORLD BUILDING AND DEBUG TOOLS ###
     while True:
         displayPlayerInfo = input("Enable debug tools? (y/n): ") # Determines if debug tools should be enabled.
         
@@ -357,6 +395,71 @@ def main():
         elif fromFile.lower() == "n":
             fromFile = False
             break
+    
+    
+    # This is the size of the world. It is a list of two positive integer values that correspond to the width and height of the world.
+    # It is given said values in the World Building thing.
+    global worldSize
+    worldSize = [0, 0]
+
+    
+    # The world. It is a multidimensional array containing block information. The index of the outermost list is the x position of a block,
+    # the index of the second list is the y position of a block, and then there is a dictionary containing various block attributes.
+    #
+    # An example of accessing an attribute would be 'world[12][17]["type"]', which would return the type of block located at position (12, 17).
+    # Another would be world[3][27]["health"], which returns the health (0 - 100) of the block at position (3, 27).
+    #
+    # Special blocks such as mimics may receive unique attributes in the future, such as a value that indicates what sprite the block should display.
+    # All of the attributes that every block in the world has (including air) are as follows:
+    # 'type' - An integer value between 0 and 17 (subject to change) that indicates what ID the block has.
+    # 'state' - An integer that indicates what state a block is. For normal blocks such as air (ID: 0) and structural blocks, this is always 0.
+    # 'health' - A number between 0 and 100 that indicates how much health a block has.
+    global world
+    world = []
+
+    # Width of the screen.
+    global scrW
+    scrW = pygame.display.Info().current_w
+    
+    # Height of the screen.
+    global scrH
+    scrH = pygame.display.Info().current_h
+
+    # Position of the camera
+    global cameraPos
+    cameraPos = [16.0, 16.0]
+    
+    # Number of blocks that can fit in the width of the screen
+    global cameraZoom
+    cameraZoom = 16
+
+    # The screen.
+    global window
+    window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
+
+    
+    # Block data is stored as a list of dictionaries:
+    # blockData = [{<block attribute>:<value>, <block attribute>:<value> ...}, {<block attribute>:<value>, <block attribute>:<value> ...} ...]
+    # where the index of a dictionary corresponds to the block ID of what it reprisents.
+    # This is a list of block attributes that all blocks have:
+    # rotatable - Whether or not the block is rotatable. Reprisented by a bool.
+    # collidable - Bool that determines if players and their lasers can collide with the block.
+    # sprites - A list of lists of sprites. The index of the first list is the state of the sprite, and the index of the second is the rotation.
+    #        Example: blockData[6]["sprites"][1][3] accesses the sprite of block 6 (OR gate) at state 1 and rotation 3.
+    # health - Number of miliseconds that a block can withstand of player lasering.
+    # states - Number of states the block has.
+    # name - String that reprisents the name of a block
+    global blockData
+    
+    if scrW % cameraZoom == 0:
+        blockData = importBlockData(scrW / cameraZoom)
+    else:
+        blockData = importBlockData(scrW / cameraZoom + 1)
+        print("fuck you and your disgusting screen resolution")
+    
+        
+    ### WORLD BUILDING AND DEBUG TOOLS ###
+    
     
     
     # If the world is being loaded from a file, this reads 'world.txt' and builds 'world' from it.
@@ -393,14 +496,10 @@ def main():
 
         for x in range(len(world)):
             for y in range(len(rawWorld)):
-                if rawWorld[y][x] != "0":
-                    world[x].append({"type":int(rawWorld[y][x]), "state":0, "health":100})
-                
-                else:
-                    world[x].append({"type":0, "state":0, "health":0})
+                world[x].append({"type":int(rawWorld[y][x]), "state":0, "rotation":0, "health":blockData[int(rawWorld[y][x])]["health"]})
         
         for x in range(32):
-            world[x][0]["health"] = 100 - (x * (1 / 32) * 100)
+            world[x][0]["health"] = blockData[world[x][0]["type"]]["health"] - (x * (1 / 32) * blockData[world[x][0]["type"]]["health"])
 
 
         # boop
@@ -437,16 +536,9 @@ def main():
     
     ### DISPLAY AND UI VALUES ##############################################################################
     
-    # Width of the screen.
-    global scrW
-    scrW = pygame.display.Info().current_w
     
-    # Height of the screen.
-    global scrH
-    scrH = pygame.display.Info().current_h
 
-    # The screen.
-    window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
+    
     
     # there is literally no point to this the game is fullscreen.
     pygame.display.set_caption("BaseRace")
@@ -474,13 +566,7 @@ def main():
     
     ### CAMERA VARIABLES ###################################################################################
     
-    # Position of the camera
-    global cameraPos
-    cameraPos = [16.0, 16.0]
     
-    # Number of blocks that can fit in the width of the screen
-    global cameraZoom
-    cameraZoom = 16
     
     # DO NOT TOUCH DURING THE MAIN LOOP. Used to determine if sprites should be resized.
     previousZoom = 16
@@ -537,67 +623,33 @@ def main():
     ### INITIALIZATION ######################################################################################################################################################################
     #########################################################################################################################################################################################
     
-    ### FILLS OUT THE "BLOCKS" LIST WITH COLORED SURFACES, WHOSE INDEX CORRESPONDS TO BLOCK ID'S ###
+    blockSprites = [] # List of resized sprites. These are what are actually blitted to the window.
     
 
-    blocks = []
-    blockSprites = []
-    
-    for block in range(8):
-        blocks.append({})
-        blockSprites.append({})
-    
-    if scrW % cameraZoom == 0:
+    for block in range(len(blockData)):
+        blockSprites.append([])
+        for state in range(len(blockData[block]["sprites"])):
+            blockSprites[block].append([])
+            for rotation in range(len(blockData[block]["sprites"][state])):
+                blockSprites[block][state].append(blockData[block]["sprites"][state][rotation].copy())
 
-        blocks[0][0] = blocksprites.air(scrW / cameraZoom, 0)
-        
-        blocks[1][0] = blocksprites.weak(scrW / cameraZoom, 0)
-        
-        blocks[2][0] = blocksprites.medium(scrW / cameraZoom, 0)
-        
-        blocks[3][0] = blocksprites.strong(scrW / cameraZoom, 0)
-        
-        blocks[4][0] = blocksprites.andGate(scrW / cameraZoom, 0)
-        
-        blocks[5][0] = blocksprites.orGate(scrW / cameraZoom, 0)
-        
-        blocks[6][0] = blocksprites.xorGate(scrW / cameraZoom, 0)
-        
-        blocks[7][0] = blocksprites.notGate(scrW / cameraZoom, 0)
-    
-    else:
-        print("weird screen resolution")
-        
-        blocks[0][0] = blocksprites.air(scrW / cameraZoom + 1, 0)
-        
-        blocks[1][0] = blocksprites.weak(scrW / cameraZoom + 1, 0)
-        
-        blocks[2][0] = blocksprites.medium(scrW / cameraZoom + 1, 0)
-        
-        blocks[3][0] = blocksprites.strong(scrW / cameraZoom + 1, 0)
-        
-        blocks[4][0] = blocksprites.andGate(scrW / cameraZoom + 1, 0)
-        
-        blocks[5][0] = blocksprites.orGate(scrW / cameraZoom + 1, 0)
-        
-        blocks[6][0] = blocksprites.xorGate(scrW / cameraZoom + 1, 0)
-        
-        blocks[7][0] = blocksprites.notGate(scrW / cameraZoom + 1, 0)
-    
 
-    for block in range(len(blocks)):
-        for state in range(len(blocks[block])):
-            blockSprites[block][state] = blocks[block][state].copy()
-
-    # Placeholder block ID list:
-    # 0 - Air
-    # 1 - Black wall
-    # 2 - Orange wall
+    print(blockSprites)
     
     #########################################################################################################################################################################################
     ### MAIN LOOP ###########################################################################################################################################################################
     #########################################################################################################################################################################################
 
+    world[0][0]["rotation"] = 1
+    world[1][0]["rotation"] = 2
+    world[2][0]["rotation"] = 3
+    world[3][0]["rotation"] = 2
+    world[4][0]["rotation"] = 1
+
+    print(blockData)
+    
+    fpsCounter = pygame.time.Clock()
+    
     while not gameExit:
         t.tick() # Ticks the clock. As of version 0.0.wheneverTazwelBitchedAtMeToPutMoreCommentsInMyCode, this is only used for displaying FPS.
         mousePos = pygame.mouse.get_pos() # Gets mouse position.
@@ -757,8 +809,8 @@ def main():
         for block in collideRange:
             if block == "EOW":
                 continue
-            
-            if world[block[0]][block[1]]["type"] != 0:
+
+            if blockData[world[block[0]][block[1]]["type"]]["collidable"]:
                 
                 if math.sqrt(math.pow(nextPlayerPos[0] - pointPos[0], 2) + math.pow(nextPlayerPos[1] - pointPos[1], 2)) < 0.45:
                     #math.sqrt(math.pow(playerDeta[0], 2) + math.pow(playerDeta[1], 2))
@@ -817,22 +869,24 @@ def main():
                 healthSprite.fill([0, 0, 0, 64])
                 
                 # Loops through the block sprites and resizes them to a perfect whole-number side-length for 1920x1080
-                for block in range(len(blocks)):
-                    for state in range(len(blocks[block])):
-                        blockSprites[block][state] = blocks[block][state].copy()
+                for block in range(len(blockSprites)):
+                    for state in range(len(blockSprites[block])):
+                        for rotation in range(len(blockSprites[block][state])):
+                            blockSprites[block][state][rotation] = blockData[block]["sprites"][state][rotation].copy()
                 # Note that if this were written in any other programming language on Earth, this would be a
                 # huge and disgusting memory leak, because the previous sprites aren't actually deleted.
                 
             else: # If the camera is no longer in the default zoom, (for quick camera pans and zoom-outs), don't bother with integer division
                 
                 #Same thing as the other loop, it just doesn't bother with integer division and rounds up to the nearest pixel.
-                        
-                for block in range(len(blocks)):
-                    for state in range(len(blocks[block])):
-                        blockSprites[block][state] = pygame.transform.scale(blocks[block][state].copy(), [int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1])
                 
                 healthSprite = pygame.Surface([int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1]).convert_alpha()
                 healthSprite.fill([0, 0, 0, 64])
+                
+                for block in range(len(blockSprites)):
+                    for state in range(len(blockSprites[block])):
+                        for rotation in range(len(blockSprites[block][state])):
+                            blockSprites[block][state][rotation] = pygame.transform.scale(blockData[block]["sprites"][state][rotation].copy(), [int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1])
         
         # If you screw with the following line, all of the sprites will be resized every single frame even if they don't have to be.
         
@@ -876,17 +930,16 @@ def main():
                         
                         else:
                          # Blit the corresponding sprite to the block type in the column and row in the relative position of the block on the screen.
+                            if not blockData[world[column][row]["type"]]["rotatable"] and world[column][row]["rotation"] != 0:
+                                world[column][row]["rotation"] = 0
+                            window.blit(blockSprites[world[column][row]["type"]][world[column][row]["state"]][world[column][row]["rotation"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)])
                             
-                            if world[column][row]["type"] != 0 and world[column][row]["health"] != 100:
-                                window.blit(blockSprites[world[column][row]["type"]][world[column][row]["state"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)])
+                            if world[column][row]["type"] != 0 and world[column][row]["health"] / blockData[world[column][row]["type"]]["health"] != 1:
                                 healthSprite.fill([0, 0, 0, 64])
-                                healthSprite.fill([0, 0, 0, 0], pygame.Rect([(healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / 100), (healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / 100)], [healthSprite.get_width() * (world[column][row]["health"] / 100), healthSprite.get_width() * (world[column][row]["health"] / 100)]))
+                                healthSprite.fill([0, 0, 0, 0], pygame.Rect([(healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / blockData[world[column][row]["type"]]["health"]), (healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / blockData[world[column][row]["type"]]["health"])], [healthSprite.get_width() * (world[column][row]["health"] / blockData[world[column][row]["type"]]["health"]), healthSprite.get_width() * (world[column][row]["health"] / blockData[world[column][row]["type"]]["health"])]))
                                 window.blit(healthSprite, getScreenPos([column, row]))
-                            
-                            else:
-                                window.blit(blockSprites[world[column][row]["type"]][world[column][row]["state"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)])
                                 
-                            # If the above line, or anything in this loop breaks, make it so I'm the one to fix it.
+                         # If the above line, or anything in this loop breaks, make it so I'm the one to fix it.
                             # I don't want to subject this shitshow to anyone else.
                         
 ##                        if [column, row] in collideRange:
@@ -976,8 +1029,8 @@ def main():
                 
             # Framerate counter. Delete these at will.
             # (but if you're going to, get rid of 'fpsDisplayFont')
-            fps = t.get_fps()
-            window.blit(fpsDisplayFont.render("fps: " + str(fps), 0, (255, 0, 0)), [0, 0])
+            window.blit(fpsDisplayFont.render("fps: " + str(fpsCounter.get_fps()), 0, (255, 0, 0)), [0, 0])
+            fpsCounter.tick()
         
             #Updates the screen
             lastFrameTime = time.time()
