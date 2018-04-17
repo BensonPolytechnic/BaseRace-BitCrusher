@@ -302,6 +302,10 @@ def importBlockData(pixels):
                 elif blockFileData[line + blockLine][:blockFileData[line+blockLine].find(".")] == "str":
                     blockInfo[len(blockInfo) - 1][blockFileData[line + blockLine][blockFileData[line + blockLine].find(".") + 1:blockFileData[line + blockLine].find(":")]] = blockFileData[line + blockLine][blockFileData[line + blockLine].find(":") + 1:blockFileData[line + blockLine].find(";")]
                 
+                elif blockFileData[line + blockLine][:blockFileData[line+blockLine].find(".")] == "float":
+                    blockInfo[len(blockInfo) - 1][blockFileData[line + blockLine][blockFileData[line + blockLine].find(".") + 1:blockFileData[line + blockLine].find(":")]] = float(blockFileData[line + blockLine][blockFileData[line + blockLine].find(":") + 1:blockFileData[line + blockLine].find(";")])
+                
+                
                 blockLine += 1 # bebebebebebebebebe
 
     # stupid fucking piece of shit
