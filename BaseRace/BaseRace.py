@@ -21,6 +21,71 @@ def getScreenPos(pos):
 def quadraticSolutions(a, b, c):
     return [((-b) + math.sqrt(math.pow(b, 2) - 4 * a * c)) / (2 * a), ((-b) - math.sqrt(math.pow(b, 2) - 4 * a * c)) / (2 * a)]
 
+# This is a function that takes the horrifying shitshow of arrays in arrays in dictionaries in arrays called 'players'
+# and returns a simpler, less shittier shitshow of seven integers that reprisents the same information.
+#
+# This is a list of what each index reprisents:
+#
+# 0 - Team of the player
+# 1 - X position of the player, multiplied by 100
+# 2 - Y position of the player, multiplied by 100
+# 3 - Rotation of the player, in degrees (0-360)
+# 4 - Health of the player (0-100)
+# 5 - Energy pf the player (0-100)
+# 6 - Whether the player is shooting (0 or 1)
+def simplifyPlayerArray(playerArray):
+    simpleArray = []
+    for player in range(len(playerArray)):
+        simpleArray.append([])
+        
+        for key in playerArray[player]:
+            simpleArray[player].append(0)
+        
+        simpleArray[player].append(0)
+        
+        for key in playerArray[player]:
+            if key == "team":
+                simpleArray[player][0] = playerArray[player]["team"]
+            
+            elif key == "pos":
+                simpleArray[player][1] = int(playerArray[player]["pos"][0] * 100)
+                simpleArray[player][2] = int(playerArray[player]["pos"][1] * 100)
+            
+            elif key == "rotation":
+                simpleArray[player][3] = int(toDeg(playerArray[player]["rotation"]))
+            
+            elif key == "health":
+                simpleArray[player][4] = int(playerArray[player]["health"])
+            
+            elif key == "energy":
+                simpleArray[player][5] = int(playerArray[player]["energy"])
+            
+            elif "isShooting":
+                if playerArray[player]["isShooting"]:
+                    simpleArray[player][6] = 1
+                else:
+                    simpleArray[player][6] = 0
+    
+    return simpleArray
+
+# This takes the array returned by simplifyPlayerArray() and
+# returns the normal player dictionary thing.
+def complicatePlayerArray(simpleArray):
+    playerArray = []
+    
+    for player in range(len(simpleArray)):
+        playerArray.append({})
+        
+        playerArray[player]["team"] = simpleArray[player][0]
+        playerArray[player]["health"] = simpleArray[player][4]
+        playerArray[player]["pos"] = [simpleArray[player][1] / 100, simpleArray[player][2] / 100]
+        playerArray[player]["energy"] = simpleArray[player][5]
+        playerArray[player]["rotation"] = toSlope(simpleArray[player][3])
+        playerArray[player]["isShooting"] = bool(simpleArray[player][6])
+    
+    return playerArray
+            
+
 # This takes a point, a slope ("+inf" for straight up and "-inf" for straight down), and a direction (-1 for towards -x, 1 for towards x, and 0 for neither)
 # and returns the nearest point of intersection of that ray with an object in the world, a player, or the edge of the world.
 # The variables offSetX, offSetY, xInt, yInt, stepX, and stepY show up throughout this function.
@@ -341,7 +406,7 @@ def cutscene(startPos, endPos, startZoom, endZoom, panDuration, pause):
     while time.time() < endTime + pause:
         if time.time() < endTime:
             cameraPos = [(endPos[0] - startPos[0]) * (math.cos(math.pi * (((time.time() - startTime) / panDuration) + 1)) + 1) / 2 + startPos[0], (endPos[1] - startPos[1]) * (math.cos(math.pi * (((time.time() - startTime) / panDuration) + 1)) + 1) / 2 + startPos[1]]
-            cameraZoom = ((time.time() - startTime) / panDuration) * (startZoom - endZoom) + startZoom
+            cameraZoom = (endZoom - startZoom) * (math.cos(math.pi * (((time.time() - startTime) / panDuration) + 1)) + 1) / 2 + startZoom
         else:
             cameraPos = endPos
             cameraZoom = endZoom
@@ -382,24 +447,7 @@ def cutscene(startPos, endPos, startZoom, endZoom, panDuration, pause):
         #///CAUTION///CAUTION///CAUTION///CAUTION
         
         
-        
-        #This makes it so the camera does not go outside the world when it isn't zoomed out very far
-        if cameraZoom <= worldSize[0]: # Check if the number of blocks that can fit in the width of the screen is less than the width of the world
-            
-            if cameraPos[0] - (cameraZoom / 2) < 0: # Check if the camera is outside the left edge of the world
-                cameraPos[0] = cameraZoom / 2 # Move the camera back into the world if the above is true.
-                
-            elif cameraPos[0] + (cameraZoom / 2) > worldSize[0]: # Check if the camera is outside the right edge of the world
-                cameraPos[0] = worldSize[0] - (cameraZoom / 2) # Move the camera back into the world if the above is true.
-            
-            if cameraPos[1] < (cameraZoom * (scrH / scrW)) / 2: # Check if the camera is outside the top edge of the world
-                cameraPos[1] = (cameraZoom * (scrH / scrW)) / 2 # Move the camera back into the world if the above is true.
-                
-            elif cameraPos[1] > worldSize[1] - (cameraZoom * (scrH / scrW)) / 2: # Check if the camera is outside the bottom edge of the world
-                cameraPos[1] = worldSize[1] - (cameraZoom * (scrH / scrW)) / 2 # Move the camera back into the world if the above is true.
-                
-        else: # If the camera DOES exceed the world size, meaning restricting it to the world is impossible:
-            window.fill([255, 255, 255]) # Fill the screen with white (or whatever we decide to make the color of air in the future), so there aren't weird graphical artifacts.
+        window.fill([255, 255, 255]) # Fill the screen with white (or whatever we decide to make the color of air in the future), so there aren't weird graphical artifacts.
 
             
         # This the important thing.
@@ -427,10 +475,7 @@ def cutscene(startPos, endPos, startZoom, endZoom, panDuration, pause):
             
             # Displays the player's lasers, if they're firing
             for player in players:
-                if player["isShooting"]:
-                    if player["energy"] - (time.time() - lastFrameTime) * 30 > 0:
-                        pygame.draw.line(window, teams[player["team"]]["color"], getScreenPos(player["pos"]), getScreenPos(raycast(player["pos"], player["rotation"][0], player["rotation"][1], player["team"])), 4)
-
+                
                 relPlayerPos = getScreenPos(player["pos"]) # Gets the relative position of the player on the screen
                 
                 # Draws the player's body.
@@ -498,6 +543,9 @@ def toSlope(deg):
 
 # Mildly important.
 def main():
+    global scrW
+    global scrH
+    global window
     
     while True:
         displayPlayerInfo = input("Enable debug tools? (y/n): ") # Determines if debug tools should be enabled.
@@ -544,47 +592,43 @@ def main():
     global world
     world = []
 
-    # Width of the screen.
-    global scrW
-    scrW = pygame.display.Info().current_w
-    
-    # Height of the screen.
-    global scrH
-    scrH = pygame.display.Info().current_h
-
-    
-
-    # The screen.
-    global window
-    window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
-
     
     # Block data is stored as a list of dictionaries:
     # blockData = [{<block attribute>:<value>, <block attribute>:<value> ...}, {<block attribute>:<value>, <block attribute>:<value> ...} ...]
     # where the index of a dictionary corresponds to the block ID of what it reprisents.
+    #
     # This is a list of block attributes that all blocks have:
+    #
     # rotatable - Whether or not the block is rotatable. Reprisented by a bool.
+    #
     # collidable - Bool that determines if players and their lasers can collide with the block.
+    #
     # sprites - A list of lists of sprites. The index of the first list is the state of the sprite, and the index of the second is the rotation.
     #        Example: blockData[6]["sprites"][1][3] accesses the sprite of block 6 (OR gate) at state 1 and rotation 3.
+    #
     # health - Number of miliseconds that a block can withstand of player lasering.
+    #
     # states - Number of states the block has.
+    #
     # name - String that reprisents the name of a block
-    global blockData
     
-    if scrW % 16 == 0:
-        blockData = importBlockData(scrW / 16)
-    else:
-        blockData = importBlockData(scrW / 16 + 1)
-        print("fuck you and your disgusting screen resolution")
-    
-        
     ### WORLD BUILDING AND DEBUG TOOLS ###
     
-    
+    global blockData
     
     # If the world is being loaded from a file, this reads 'world.txt' and builds 'world' from it.
     if fromFile:
+        
+        scrW = pygame.display.Info().current_w
+        scrH = pygame.display.Info().current_h
+        window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
+        
+        if scrW % 16 == 0:
+            blockData = importBlockData(scrW / 16)
+        else:
+            blockData = importBlockData(scrW / 16 + 1)
+            print("fuck you and your disgusting screen resolution")
+            
         
         # Loads world.txt
         worldImport = open(os.path.join("data", "world", "world.txt"), "r")
@@ -621,6 +665,12 @@ def main():
         
         for x in range(32):
             world[x][0]["health"] = blockData[world[x][0]["type"]]["health"] - (x * (1 / 32) * blockData[world[x][0]["type"]]["health"])
+        
+        world[0][0]["rotation"] = 1
+        world[1][0]["rotation"] = 2
+        world[2][0]["rotation"] = 3
+        world[3][0]["rotation"] = 2
+        world[4][0]["rotation"] = 1
 
 
         # boop
@@ -653,7 +703,17 @@ def main():
         for x in range(worldSize[0]):
             world.append([])
             for y in range(worldSize[1]):
-                world[x].append({"type":0, "state":0})
+                world[x].append({"type":0, "state":0, "rotation":0, "health":0})
+        
+        scrW = pygame.display.Info().current_w
+        scrH = pygame.display.Info().current_h
+        window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
+        
+        if scrW % 16 == 0:
+            blockData = importBlockData(scrW / 16)
+        else:
+            blockData = importBlockData(scrW / 16 + 1)
+            print("fuck you and your disgusting screen resolution")
     
     ### DISPLAY AND UI VALUES ##############################################################################
     
@@ -763,15 +823,10 @@ def main():
     #########################################################################################################################################################################################
     ### MAIN LOOP ###########################################################################################################################################################################
     #########################################################################################################################################################################################
-
-    world[0][0]["rotation"] = 1
-    world[1][0]["rotation"] = 2
-    world[2][0]["rotation"] = 3
-    world[3][0]["rotation"] = 2
-    world[4][0]["rotation"] = 1
     
     fpsCounter = pygame.time.Clock()
 
+    print(blockData)
     
     while not gameExit:
         t.tick() # Ticks the clock. As of version 0.0.wheneverTazwelBitchedAtMeToPutMoreCommentsInMyCode, this is only used for displaying FPS.
@@ -798,7 +853,7 @@ def main():
                     inputSet[1] = 1
                 
                 #Debug tools, they zoom the camera out or in:
-                elif event.key == K_e:
+                elif event.key == K_r:
                     cameraZoom = 60.5
                     
                 elif event.key == K_f:
@@ -1154,6 +1209,9 @@ def main():
             # Framerate counter. Delete these at will.
             # (but if you're going to, get rid of 'fpsDisplayFont')
             window.blit(fpsDisplayFont.render("fps: " + str(fpsCounter.get_fps()), 0, (255, 0, 0)), [0, 0])
+            simple = simplifyPlayerArray(players)
+            window.blit(fpsDisplayFont.render("simple: " + str(simple), 0, (255, 0, 0)), [0, 100])
+            window.blit(fpsDisplayFont.render("complex: " + str(complicatePlayerArray(simple)), 0, (255, 0, 0)), [0, 150])
             fpsCounter.tick()
         
             #Updates the screen
