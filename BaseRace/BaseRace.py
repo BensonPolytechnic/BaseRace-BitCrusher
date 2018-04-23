@@ -1209,9 +1209,6 @@ def main():
             # Framerate counter. Delete these at will.
             # (but if you're going to, get rid of 'fpsDisplayFont')
             window.blit(fpsDisplayFont.render("fps: " + str(fpsCounter.get_fps()), 0, (255, 0, 0)), [0, 0])
-            simple = simplifyPlayerArray(players)
-            window.blit(fpsDisplayFont.render("simple: " + str(simple), 0, (255, 0, 0)), [0, 100])
-            window.blit(fpsDisplayFont.render("complex: " + str(complicatePlayerArray(simple)), 0, (255, 0, 0)), [0, 150])
             fpsCounter.tick()
         
             #Updates the screen
