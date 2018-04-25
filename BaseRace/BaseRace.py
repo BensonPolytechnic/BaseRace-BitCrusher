@@ -625,8 +625,10 @@ def main():
         
         if scrW % 16 == 0:
             blockData = importBlockData(scrW / 16)
+            defaultBlockWidth = scrW / 16
         else:
             blockData = importBlockData(scrW / 16 + 1)
+            defaultBlockWidth = scrW / 16 + 1
             print("fuck you and your disgusting screen resolution")
             
         
@@ -711,14 +713,18 @@ def main():
         
         if scrW % 16 == 0:
             blockData = importBlockData(scrW / 16)
+            defaultBlockWidth = scrW / 16
         else:
             blockData = importBlockData(scrW / 16 + 1)
+            defaultBlockWidth = scrW / 16 + 1
             print("fuck you and your disgusting screen resolution")
-    
+
     ### DISPLAY AND UI VALUES ##############################################################################
     
     # there is literally no point to this the game is fullscreen.
     pygame.display.set_caption("BaseRace")
+
+    dispInventory = True
      
     #colors = {"orange":[255, 128, 0], "blue":[0, 128, 255], "white":[255, 255, 255], "black":[0, 0, 0], "dark blue":[0, 64, 128], "dark orange":[128, 64, 0], "green":[0, 255, 0], "grey":[223, 223, 223]} # Dictionary of colors
     
@@ -739,6 +745,27 @@ def main():
     
     # Position of the top-left corner of the energy bar on the screen.
     energyBarPos = [scrW * (25 / 1920), scrH * (19 / 20) - scrH * (25 / 1080)]
+
+    inventoryScroll = 0
+
+    targetScroll = 0
+
+    playerInventory = []
+
+    inventorySprite = pygame.Surface([blockData[0]["sprites"][0][0].get_height(), blockData[0]["sprites"][0][0].get_height() * len(blockData)]).convert()
+
+    inventorySelection = pygame.Surface([blockData[0]["sprites"][0][0].get_height(), blockData[0]["sprites"][0][0].get_height()]).convert_alpha()
+    inventorySelection.fill([255, 0, 0, 255])
+    inventorySelection.fill([0, 0, 0, 0], pygame.Rect([inventorySelection.get_height() / 20, inventorySelection.get_height() / 20], [inventorySelection.get_height() * 9 / 10, inventorySelection.get_height() * 9 / 10]))
+
+    for sprite in range(len(blockData)):
+        playerInventory.append(16)
+        inventorySprite.blit(blockData[sprite]["sprites"][0][0], [0, blockData[0]["sprites"][0][0].get_height() * sprite])
+
+    minScroll = scrH / 2 + inventorySelection.get_height() / 2 - (len(playerInventory) * inventorySelection.get_height()) + scrW / 16
+    maxScroll = (scrH / 2) - (scrW / 32) + scrW / 16
+    
+    inventorySmallText = pygame.font.Font(os.path.join("data", "fonts", "VT323-Regular.ttf"), int(scrW / 32))
     
     
     ### CAMERA VARIABLES ###################################################################################
@@ -818,7 +845,7 @@ def main():
             for rotation in range(len(blockData[block]["sprites"][state])):
                 blockSprites[block][state].append(blockData[block]["sprites"][state][rotation].copy())
 
-
+    
     
     #########################################################################################################################################################################################
     ### MAIN LOOP ###########################################################################################################################################################################
@@ -876,6 +903,12 @@ def main():
                     
                 elif event.key == K_s:
                     inputSet[1] = 0
+
+                elif event.key == K_e:
+                    if dispInventory:
+                        dispInventory = False
+                    else:
+                        dispInventory = True
                     
             elif event.type == MOUSEBUTTONDOWN:
                 
@@ -885,6 +918,16 @@ def main():
                     
                 elif event.button == 3: # Right click detection
                     inputSet[5] = 1
+
+                elif event.button == 4:
+                    if targetScroll > 0 and dispInventory:
+                        targetScroll -= 1
+                
+                elif event.button == 5:
+                    if targetScroll < len(playerInventory) - 1 and dispInventory:
+                        targetScroll += 1
+
+                    
 
             elif event.type == MOUSEBUTTONUP:
                 # This sets corresponding mouse buttons in 'inputSet' to 0 if they're not being pushed.
@@ -1099,7 +1142,7 @@ def main():
         # This the important thing.
         # It renders the section of the world that's visible to the camera.
         # It only does so when ~1/120th of a second has passed.
-        if time.time() - lastFrameTime > 0.008:
+        if time.time() - lastFrameTime > 0.006:
             for column in range(int(cameraPos[0] - (cameraZoom / 2)) - 1, int(cameraPos[0] + (cameraZoom / 2)) + 1): # Scans accross the world area of the world visible to the camera in columns
                 if column < 0 or column > worldSize[0] - 1: # If the column is outside of the world, continue, because that would crash the program.
                     continue
@@ -1120,10 +1163,6 @@ def main():
                                 
                          # If the above line, or anything in this loop breaks, make it so I'm the one to fix it.
                             # I don't want to subject this shitshow to anyone else.
-                        
-##                        if [column, row] in collideRange:
-##                            window.blit(blockSprites[2], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)])
-                            
                             
                             ########## Uncomment the following line to display block positions (terrible performance): ##########
                             #window.blit(fpsDisplayFont.render("(" + str(column) + ", " + str(row) + ")", 0, (255, 0, 0)), [(column - cameraPos[0] + (cameraZoom // 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) // 2) * (scrW / cameraZoom) + (scrW / (cameraZoom * 2))])
@@ -1193,10 +1232,31 @@ def main():
             ### EVERYTHING PAST THIS POINT IS UI ###
             
             #pygame.draw.circle(window, [255, 0, 0], getScreenPos(pointPos), 5)
+
+            if dispInventory:
+                #inventoryScroll = (scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth)
+                
+                if abs(inventoryScroll - ((scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth))) < 20:
+                    inventoryScroll = (scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth)
+                else:
+                    inventoryScroll = int(((scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth) - inventoryScroll) * (time.time() - lastFrameTime) * 25) + inventoryScroll
+                    
+                window.blit(inventorySprite, [(15 / 16) * scrW, inventoryScroll])
+                
+                window.blit(inventorySelection, [(15 / 16) * scrW, scrH / 2 + (scrW / 32)])
+                
+                currentName = inventorySmallText.render(str(blockData[int(((scrH / 2 + scrW / 32) - inventoryScroll) / defaultBlockWidth)]["name"]), 0, (0, 255, 0))
+                
+                window.blit(currentName, [(scrW * 15 / 16) - currentName.get_width() - 8, scrH / 2 + scrW / 32 + 30])
+                
+                for i in range(len(playerInventory)):
+                    window.blit(inventorySmallText.render(str(playerInventory[i]), 0, (0, 255, 0)), [(15 / 16) * scrW + 8, inventoryScroll + (i * defaultBlockWidth)])
             
             # Draws health and energy bar borders.
             pygame.draw.rect(window, [32, 255, 64], pygame.Rect(healthBarPos, statusBarDims), 2)
             pygame.draw.rect(window, [64, 128, 255], pygame.Rect(energyBarPos, statusBarDims), 2)
+
+    
             
             # Draws health and energy bar interiors.
             window.fill([32, 255, 64], pygame.Rect(healthBarPos, [statusBarDims[0] * (players[0]["health"] / 100), statusBarDims[1]]))
