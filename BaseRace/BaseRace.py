@@ -16,6 +16,9 @@ pygame.font.init()
 def getScreenPos(pos):
     return [int((pos[0] - cameraPos[0] + (cameraZoom / 2)) * ((scrW / cameraZoom))), int((pos[1] - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom))]
 
+def getWorldPos(pos):
+    return [(pos[0] * (cameraZoom / scrW)) + cameraPos[0] - (cameraZoom / 2), (pos[1] * (cameraZoom / scrW)) + cameraPos[1] - (cameraZoom * (scrH / scrW) / 2)]
+
 # Takes a position of something on the screen in pixels, and returns its position in the world.
 
 def quadraticSolutions(a, b, c):
@@ -750,6 +753,7 @@ def main():
 
     targetScroll = 0
 
+
     playerInventory = []
 
     inventorySprite = pygame.Surface([blockData[0]["sprites"][0][0].get_height(), blockData[0]["sprites"][0][0].get_height() * len(blockData)]).convert()
@@ -766,6 +770,11 @@ def main():
     maxScroll = (scrH / 2) - (scrW / 32) + scrW / 16
     
     inventorySmallText = pygame.font.Font(os.path.join("data", "fonts", "VT323-Regular.ttf"), int(scrW / 32))
+
+    blockSelectionSprite = pygame.Surface([blockData[0]["sprites"][0][0].get_height(), blockData[0]["sprites"][0][0].get_height()]).convert_alpha()
+    blockSelectionSprite.fill([0, 255, 0, 255])
+    blockSelectionSprite.fill([0, 0, 0, 0], pygame.Rect([inventorySelection.get_height() / 20, inventorySelection.get_height() / 20], [inventorySelection.get_height() * 9 / 10, inventorySelection.get_height() * 9 / 10]))
+
     
     
     ### CAMERA VARIABLES ###################################################################################
@@ -939,7 +948,12 @@ def main():
         
         # Checks if the mouse is being clicked, and makes the player start shooting if it is.
         if inputSet[4] == 1:
-            players[0]["isShooting"] = True
+            if dispInventory:
+                pass
+                # Do a bunch of stuff to talk to the server
+
+            else:
+                players[0]["isShooting"] = True
             
         else:
             players[0]["isShooting"] = False
@@ -1235,6 +1249,10 @@ def main():
 
             if dispInventory:
                 #inventoryScroll = (scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth)
+
+                spriteWorldPos = getWorldPos(mousePos)
+
+                window.blit(blockSelectionSprite, getScreenPos([int(spriteWorldPos[0]), int(spriteWorldPos[1])]))
                 
                 if abs(inventoryScroll - ((scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth))) < 20:
                     inventoryScroll = (scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth)
