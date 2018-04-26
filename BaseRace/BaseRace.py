@@ -771,9 +771,12 @@ def main():
     
     inventorySmallText = pygame.font.Font(os.path.join("data", "fonts", "VT323-Regular.ttf"), int(scrW / 32))
 
-    blockSelectionSprite = pygame.Surface([blockData[0]["sprites"][0][0].get_height(), blockData[0]["sprites"][0][0].get_height()]).convert_alpha()
-    blockSelectionSprite.fill([0, 255, 0, 255])
-    blockSelectionSprite.fill([0, 0, 0, 0], pygame.Rect([inventorySelection.get_height() / 20, inventorySelection.get_height() / 20], [inventorySelection.get_height() * 9 / 10, inventorySelection.get_height() * 9 / 10]))
+    blockSelectionSprites = [pygame.Surface([blockData[0]["sprites"][0][0].get_height(), blockData[0]["sprites"][0][0].get_height()]).convert_alpha(), pygame.Surface([blockData[0]["sprites"][0][0].get_height(), blockData[0]["sprites"][0][0].get_height()]).convert_alpha()]
+    blockSelectionSprites[0].fill([0, 255, 0, 255])
+    blockSelectionSprites[0].fill([0, 0, 0, 0], pygame.Rect([inventorySelection.get_height() / 20, inventorySelection.get_height() / 20], [inventorySelection.get_height() * 9 / 10, inventorySelection.get_height() * 9 / 10]))
+
+    blockSelectionSprites[1].fill([255, 0, 0, 255])
+    blockSelectionSprites[1].fill([0, 0, 0, 0], pygame.Rect([inventorySelection.get_height() / 20, inventorySelection.get_height() / 20], [inventorySelection.get_height() * 9 / 10, inventorySelection.get_height() * 9 / 10]))
 
     
     
@@ -1202,8 +1205,21 @@ def main():
             
             
             # Displays players.
+
+            spriteWorldPos = getWorldPos(mousePos)
+
+            spriteWorldPos = [int(spriteWorldPos[0]), int(spriteWorldPos[1])]
+
+            denyBlockPlacement = False
+            
             for player in players:
+                
+                
                 relPlayerPos = getScreenPos(player["pos"]) # Gets the relative position of the player on the screen
+
+                if spriteWorldPos in [[int(player["pos"][0] + 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] + 0.5), int(player["pos"][1] - 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] - 0.5)]]:
+                    denyBlockPlacement = True
+
                 
                 
                 # This block is what displays players.
@@ -1250,9 +1266,12 @@ def main():
             if dispInventory:
                 #inventoryScroll = (scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth)
 
-                spriteWorldPos = getWorldPos(mousePos)
 
-                window.blit(blockSelectionSprite, getScreenPos([int(spriteWorldPos[0]), int(spriteWorldPos[1])]))
+                if denyBlockPlacement:
+                    window.blit(blockSelectionSprites[1], getScreenPos(spriteWorldPos))
+
+                else:
+                    window.blit(blockSelectionSprites[0], getScreenPos(spriteWorldPos))
                 
                 if abs(inventoryScroll - ((scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth))) < 20:
                     inventoryScroll = (scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth)
