@@ -1,14 +1,14 @@
 import time,pygame,os,math
-from pygame.locals import*
-startTime=time.time()
-pygame.mixer.pre_init(44100, 16, 2, 4096)
+from pygame import mixer,display
+s=time.time()
+mixer.pre_init(44100, 16, 2, 4096)
 pygame.init()
-pygame.mixer.init()
-pygame.mixer.music.load(os.path.join("Sounds","swoosh.mp3"))
-pygame.mixer.music.set_volume(1.0)
-pygame.mixer.music.play()
-window=pygame.display.set_mode((1920,1080),pygame.FULLSCREEN|pygame.HWSURFACE|pygame.DOUBLEBUF)
-while time.time()-startTime<13.4:
- window.fill([int(math.sin((time.time()-startTime)*0.5)*126)+127,int(math.sin((time.time()-startTime)*0.75+5)*126)+127,int(math.sin(time.time()-startTime)*126)+127])
- pygame.display.flip()
+mixer.init()
+mixer.music.load(os.path.join("unused","swoosh.mp3"))
+mixer.music.set_volume(1.0)
+mixer.music.play()
+window=display.set_mode((1920,1080),pygame.FULLSCREEN)
+while time.time()-s<13.4:
+ window.fill([math.sin((time.time()-s)*0.5)*126+127,math.sin((time.time()-s)*0.75+5)*126+127,math.sin(time.time()-s)*126+127])
+ display.flip()
 pygame.quit()
