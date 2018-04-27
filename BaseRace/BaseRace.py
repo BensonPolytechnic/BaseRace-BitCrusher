@@ -38,6 +38,7 @@ def quadraticSolutions(a, b, c):
 # 6 - Whether the player is shooting (0 or 1)
 def simplifyPlayerArray(playerArray):
     simpleArray = []
+    
     for player in range(len(playerArray)):
         simpleArray.append([])
         
@@ -52,6 +53,7 @@ def simplifyPlayerArray(playerArray):
             
             elif key == "pos":
                 simpleArray[player][1] = int(playerArray[player]["pos"][0] * 100)
+                
                 simpleArray[player][2] = int(playerArray[player]["pos"][1] * 100)
             
             elif key == "rotation":
@@ -66,6 +68,7 @@ def simplifyPlayerArray(playerArray):
             elif "isShooting":
                 if playerArray[player]["isShooting"]:
                     simpleArray[player][6] = 1
+                    
                 else:
                     simpleArray[player][6] = 0
     
@@ -80,10 +83,15 @@ def complicatePlayerArray(simpleArray):
         playerArray.append({})
         
         playerArray[player]["team"] = simpleArray[player][0]
+        
         playerArray[player]["health"] = simpleArray[player][4]
+        
         playerArray[player]["pos"] = [simpleArray[player][1] / 100, simpleArray[player][2] / 100]
+        
         playerArray[player]["energy"] = simpleArray[player][5]
+        
         playerArray[player]["rotation"] = toSlope(simpleArray[player][3])
+        
         playerArray[player]["isShooting"] = bool(simpleArray[player][6])
     
     return playerArray
@@ -123,23 +131,31 @@ def raycast(point, slope, dir=0, team=None):
             
             elif point[1] <= player["pos"][1] + 0.5 and point[1] >= player["pos"][1] - 0.5:
                 collisions.append([player["pos"][0], point[1]])
+                
         
         if dir > 0:
             offSetX = 0
+            
             stepX = 1
+            
             xInt = [int(point[0]) + 1, point[1]]
             
         else:
             offSetX = -1
+            
             stepX = -1
+            
             xInt = [int(point[0]), point[1]]
             
         while True:
             if xInt[0] >= worldSize[0] + offSetX or xInt[0] <= 0:
                 collisions.append(xInt)
+                
                 break
+            
             elif blockData[world[xInt[0] + offSetX][int(xInt[1])]["type"]]["collidable"] or xInt[0] >= worldSize[0] + offSetX or xInt[0] <= 0:
                 collisions.append(xInt)
+                
                 break
             
             else:
@@ -162,7 +178,9 @@ def raycast(point, slope, dir=0, team=None):
         while True:
             if blockData[world[int(yInt[0])][yInt[1] - 1]["type"]]["collidable"] or yInt[1] <= 0:
                 collisions.append(yInt)
+                
                 break
+            
             else:
                 yInt[1] -= 1
     
@@ -180,10 +198,14 @@ def raycast(point, slope, dir=0, team=None):
         while True:
             if yInt[1] >= worldSize[1]:
                 collisions.append(yInt)
+                
                 break
+            
             elif blockData[world[int(yInt[0])][yInt[1]]["type"]]["collidable"]:
                 collisions.append(yInt)
+                
                 break
+            
             else:
                 yInt[1] += 1
     
@@ -199,8 +221,11 @@ def raycast(point, slope, dir=0, team=None):
             
             #All of the following is based on a bunch of really annoying algebra.
             m2 = -1 / (slope) # Slope of a line that is perpendicular to the ray.
+            
             b2 = player["pos"][1] - (m2 * player["pos"][0]) # y-intercept of a line that is perpendicular to the ray, and passes through the center of a player.
+            
             xCoord = (b2 - b1) / (slope - m2) # x position of the intersection between y=m2 + b2 and y=slope + b1
+            
             yCoord = slope * xCoord + b1 # y position of the intersection between y=m2 + b2 and y=slope + b1
             
             # Checks if the intersection between the lines is within the player's body.
@@ -219,35 +244,55 @@ def raycast(point, slope, dir=0, team=None):
         if slope > 0:
             if dir > 0:
                 stepX = 1
+                
                 stepY = 1
+                
                 xInt = [int(point[0]) + 1, slope * (int(point[0]) + 1) + b1]
+                
                 yInt = [(((int(point[1]) + 1) - point[1]) / slope) + point[0], int(point[1]) + 1]
+                
                 offSetX = 0
+                
                 offSetY = 0
                 
             else:
                 stepX = -1
+                
                 stepY = -1
+                
                 xInt = [int(point[0]), slope * (int(point[0])) + b1]
+                
                 yInt = [(((int(point[1])) - point[1]) / slope) + point[0], int(point[1])]
+                
                 offSetX = -1
+                
                 offSetY = -1
                 
         else:
             if dir > 0:
                 stepX = 1
+                
                 stepY = -1
+                
                 xInt = [int(point[0]) + 1, slope * (int(point[0]) + 1) + b1]
+                
                 yInt = [(((int(point[1])) - point[1]) / slope) + point[0], int(point[1])]
+                
                 offSetX = 0
+                
                 offSetY = -1
                 
             else:
                 stepX = -1
+                
                 stepY = 1
+                
                 xInt = [int(point[0]), slope * (int(point[0])) + b1]
+                
                 yInt = [(((int(point[1]) + 1) - point[1]) / slope) + point[0], int(point[1]) + 1]
+                
                 offSetX = -1
+                
                 offSetY = 0
         
         # This loops through the world, checking for collisions with blocks.
@@ -260,12 +305,14 @@ def raycast(point, slope, dir=0, team=None):
                 # Checks if xInt is outside the world, and exits the loop if it is.
                 if xInt[0] >= worldSize[0] or xInt[1] >= worldSize[1] or xInt[0] <= 0 or xInt[1] <= 0:
                     collisions.append(xInt)
+                    
                     break
                 
                 else:
                     # This checks if xInt is intersecting with a block in the world.
                     if blockData[world[int(xInt[0]) + offSetX][int(xInt[1])]["type"]]["collidable"]:
                         collisions.append(xInt)
+                        
                         break
                     
                     else:
@@ -277,12 +324,14 @@ def raycast(point, slope, dir=0, team=None):
                 # Checks if yInt is outside the world, and exits the loop if it is.
                 if yInt[0] >= worldSize[0] or yInt[1] >= worldSize[1] or yInt[0] <= 0 or yInt[1] <= 0:
                     collisions.append(yInt)
+                    
                     break
                 
                 else:
                     # This checks if yInt is intersecting with a block in the world.
                     if blockData[world[int(yInt[0])][int(yInt[1]) + offSetY]["type"]]["collidable"]:
                         collisions.append(yInt)
+                        
                         break
                     
                     else:
@@ -343,6 +392,7 @@ def importBlockData(pixels):
 
     # Deletes the file object because it isn't needed anymore.
     blockInfoImport.close()
+    
     del blockInfoImport
 
     blockLine = 0 # Value used for incrementing through sets of block data
@@ -355,7 +405,9 @@ def importBlockData(pixels):
     for line in range(len(blockFileData)):
         if blockFileData[line] == "{":
             blockInfo.append({})
+            
             blockLine = 0
+            
             while True:
                 if blockFileData[line + blockLine] == "}":
                     break
@@ -382,9 +434,13 @@ def importBlockData(pixels):
         if blockInfo[block]["rotatable"]:
             for state in range(blockInfo[block]["states"]):
                 blockInfo[block]["sprites"].append([])
+                
                 blockInfo[block]["sprites"][state].append(blocksprites.sprite(block, pixels, state))
+                
                 blockInfo[block]["sprites"][state].append(pygame.transform.rotate(blocksprites.sprite(block, pixels, state), -90))
+                
                 blockInfo[block]["sprites"][state].append(pygame.transform.rotate(blocksprites.sprite(block, pixels, state), -180))
+                
                 blockInfo[block]["sprites"][state].append(pygame.transform.rotate(blocksprites.sprite(block, pixels, state), -270))
             
         else:
@@ -393,115 +449,7 @@ def importBlockData(pixels):
             
     
     return blockInfo # eeeeeeeeeeeeee
-    
 
-def cutscene(startPos, endPos, startZoom, endZoom, panDuration, pause):
-    global cameraPos
-    global cameraZoom
-    global playerLaserDist
-    startTime = time.time()
-    endTime = startTime + panDuration
-    previousZoom = 16
-    lastFrameTime = time.time()
-    healthSprite = pygame.Surface([scrW / cameraZoom, scrW / cameraZoom]).convert_alpha()
-    healthSprite.fill([0, 0, 0, 64])
-
-    while time.time() < endTime + pause:
-        if time.time() < endTime:
-            cameraPos = [(endPos[0] - startPos[0]) * (math.cos(math.pi * (((time.time() - startTime) / panDuration) + 1)) + 1) / 2 + startPos[0], (endPos[1] - startPos[1]) * (math.cos(math.pi * (((time.time() - startTime) / panDuration) + 1)) + 1) / 2 + startPos[1]]
-            cameraZoom = (endZoom - startZoom) * (math.cos(math.pi * (((time.time() - startTime) / panDuration) + 1)) + 1) / 2 + startZoom
-        else:
-            cameraPos = endPos
-            cameraZoom = endZoom
-    
-        if cameraZoom != previousZoom: # Checks if the camera zoom is different
-            playerLaserDist = int((3 * scrW) / (8 * cameraZoom)) # Scales the distance from the player's laser to the player
-            
-            
-            if cameraZoom == 16: # This is for maintaining pixel-perfectness for when the camera is at default zoom.
-                
-                healthSprite = pygame.Surface([scrW / cameraZoom, scrW / cameraZoom]).convert_alpha()
-                healthSprite.fill([0, 0, 0, 64])
-                
-                # Loops through the block sprites and resizes them to a perfect whole-number side-length for 1920x1080
-                for block in range(len(blockSprites)):
-                    for state in range(len(blockSprites[block])):
-                        for rotation in range(len(blockSprites[block][state])):
-                            blockSprites[block][state][rotation] = blockData[block]["sprites"][state][rotation].copy()
-                # Note that if this were written in any other programming language on Earth, this would be a
-                # huge and disgusting memory leak, because the previous sprites aren't actually deleted.
-                
-            else: # If the camera is no longer in the default zoom, (for quick camera pans and zoom-outs), don't bother with integer division
-                
-                #Same thing as the other loop, it just doesn't bother with integer division and rounds up to the nearest pixel.
-                
-                healthSprite = pygame.Surface([int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1]).convert_alpha()
-                healthSprite.fill([0, 0, 0, 64])
-                
-                for block in range(len(blockSprites)):
-                    for state in range(len(blockSprites[block])):
-                        for rotation in range(len(blockSprites[block][state])):
-                            blockSprites[block][state][rotation] = pygame.transform.scale(blockData[block]["sprites"][state][rotation].copy(), [int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1])
-        
-        # If you screw with the following line, all of the sprites will be resized every single frame even if they don't have to be.
-        
-        #///CAUTION///CAUTION///CAUTION///CAUTION
-        previousZoom = cameraZoom# DO NOT TOUCH
-        #///CAUTION///CAUTION///CAUTION///CAUTION
-        
-        
-        window.fill([255, 255, 255]) # Fill the screen with white (or whatever we decide to make the color of air in the future), so there aren't weird graphical artifacts.
-
-            
-        # This the important thing.
-        # It renders the section of the world that's visible to the camera.
-        # It only does so when ~1/120th of a second has passed.
-        if time.time() - lastFrameTime > 0.008:
-            for column in range(int(cameraPos[0] - (cameraZoom / 2)) - 1, int(cameraPos[0] + (cameraZoom / 2)) + 1): # Scans accross the world area of the world visible to the camera in columns
-                if column < 0 or column > worldSize[0] - 1: # If the column is outside of the world, continue, because that would crash the program.
-                    continue
-                else:
-                    for row in range(int(cameraPos[1] - ((cameraZoom * (scrH / scrW)) // 2)) - 1, int(cameraPos[1] + ((cameraZoom * (scrH / scrW)) // 2)) + 2): # Scans accross the world area of the world visible to the camera in rows
-                        
-                        if row < 0 or row >= worldSize[1]: # If the row is outside of the world, continue, because that would crash the program.
-                            continue
-                        
-                        else:
-                         # Blit the corresponding sprite to the block type in the column and row in the relative position of the block on the screen.
-                            window.blit(blockSprites[world[column][row]["type"]][world[column][row]["state"]][world[column][row]["rotation"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)])
-                            
-                            if world[column][row]["type"] != 0 and world[column][row]["health"] / blockData[world[column][row]["type"]]["health"] != 1:
-                                healthSprite.fill([0, 0, 0, 64])
-                                healthSprite.fill([0, 0, 0, 0], pygame.Rect([(healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / blockData[world[column][row]["type"]]["health"]), (healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / blockData[world[column][row]["type"]]["health"])], [healthSprite.get_width() * (world[column][row]["health"] / blockData[world[column][row]["type"]]["health"]), healthSprite.get_width() * (world[column][row]["health"] / blockData[world[column][row]["type"]]["health"])]))
-                                window.blit(healthSprite, getScreenPos([column, row]))
-                                
-            
-            # Displays the player's lasers, if they're firing
-            for player in players:
-                
-                relPlayerPos = getScreenPos(player["pos"]) # Gets the relative position of the player on the screen
-                
-                # Draws the player's body.
-                pygame.draw.circle(window, teams[player["team"]]["color"], relPlayerPos, int(scrW / (2 * cameraZoom)), 0)
-                
-                # Draws the player's adorable little cicle that shows where they're facing.
-                # Checks if the player's rotation isn't straight up or down.
-                if str(type(player["rotation"][0])) == "<class 'float'>" or str(type(player["rotation"][0])) == "<class 'int'>":
-                    pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [int(math.cos(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[0], int(math.sin(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
-                
-                # Catches if the player's rotation is straight up.
-                elif player["rotation"][0] == "+inf":
-                    pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [relPlayerPos[0], relPlayerPos[1] - playerLaserDist], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
-                
-                # Catches if the player's rotation is straight down.
-                else:
-                    pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [relPlayerPos[0], relPlayerPos[1] + playerLaserDist], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
-
-            
-            #Updates the screen
-            lastFrameTime = time.time()
-            
-            pygame.display.flip()
 
 
 # This takes a slope and a direction (similar to 'raycast') and returns an angle in degrees.
@@ -546,9 +494,11 @@ def toSlope(deg):
 
 # Mildly important.
 def main():
-    global scrW
-    global scrH
-    global window
+    global scrW # Width of the screen
+    
+    global scrH # Height of he screen
+    
+    global window # The screen
     
     while True:
         displayPlayerInfo = input("Enable debug tools? (y/n): ") # Determines if debug tools should be enabled.
@@ -556,11 +506,14 @@ def main():
         # Input validation.
         if displayPlayerInfo.lower() == "y":
             displayPlayerInfo = True
+            
             break
         
         elif displayPlayerInfo.lower() == "n":
             displayPlayerInfo = False
+            
             break
+    
     
     while True:
         fromFile = input("Import world from file? (y/n): ") # Determines if the world should be loaded from the file 'world.txt'
@@ -568,17 +521,22 @@ def main():
         # Input validation.
         if fromFile.lower() == "y":
             fromFile = True
+            
             break
         
         elif fromFile.lower() == "n":
             fromFile = False
+            
             break
+    
     
     
     # This is the size of the world. It is a list of two positive integer values that correspond to the width and height of the world.
     # It is given said values in the World Building thing.
+    
     global worldSize
     worldSize = [0, 0]
+
 
     
     # The world. It is a multidimensional array containing block information. The index of the outermost list is the x position of a block,
@@ -592,8 +550,10 @@ def main():
     # 'type' - An integer value between 0 and 17 (subject to change) that indicates what ID the block has.
     # 'state' - An integer that indicates what state a block is. For normal blocks such as air (ID: 0) and structural blocks, this is always 0.
     # 'health' - A number between 0 and 100 that indicates how much health a block has.
+    
     global world
     world = []
+
 
     
     # Block data is stored as a list of dictionaries:
@@ -615,26 +575,41 @@ def main():
     #
     # name - String that reprisents the name of a block
     
-    ### WORLD BUILDING AND DEBUG TOOLS ###
-    
     global blockData
     
+    
+    
+    #########################################
+    ### WORLD BUILDING AND INITIALIZATION ###
+    #########################################
+    
     # If the world is being loaded from a file, this reads 'world.txt' and builds 'world' from it.
+    
     if fromFile:
         
+        # Gets the width of the screen in pixels.
         scrW = pygame.display.Info().current_w
+        
+        # Gets the height of the screen in pixels.
         scrH = pygame.display.Info().current_h
+        
+        # Sets the display mode.
         window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
         
+        
+        # Imports block data and resizes sprites.
         if scrW % 16 == 0:
             blockData = importBlockData(scrW / 16)
             defaultBlockWidth = scrW / 16
+            
         else:
+            # If the screen width isn't divisible by 16,
+            # this rounds sprite sizes up by 1 so there isn't any artifacting.
             blockData = importBlockData(scrW / 16 + 1)
             defaultBlockWidth = scrW / 16 + 1
             print("fuck you and your disgusting screen resolution")
             
-        
+            
         # Loads world.txt
         worldImport = open(os.path.join("data", "world", "world.txt"), "r")
         
@@ -647,10 +622,12 @@ def main():
         # Deletes the file object because it isn't needed anymore.
         del worldImport
         
+        
         # Ensures that the length of each line in world.txt is the same, because holy
         # shit I don't want to implement support for non-rectangular worlds.
         for line in range(len(rawWorld)):
             rawWorld[line] = rawWorld[line].strip()
+            
             if line == 0:
                 continue
             
@@ -668,9 +645,13 @@ def main():
             for y in range(len(rawWorld)):
                 world[x].append({"type":int(rawWorld[y][x]), "state":0, "rotation":0, "health":blockData[int(rawWorld[y][x])]["health"]})
         
+        
+        # Degrades all of the blocks on the top edge of the world to test block health sprites.
         for x in range(32):
             world[x][0]["health"] = blockData[world[x][0]["type"]]["health"] - (x * (1 / 32) * blockData[world[x][0]["type"]]["health"])
         
+        
+        # Rotates some of the blocks in the top-left corner of the world to test block rotation.
         world[0][0]["rotation"] = 1
         world[1][0]["rotation"] = 2
         world[2][0]["rotation"] = 3
@@ -685,7 +666,7 @@ def main():
         worldSize = [len(world), len(world[0])]
     
     else:
-        
+        # Gets and validates the width of the blank world from the user.
         while True:
             worldSize[0] = input("Width of the world (int): ") # Gets the width of the world from console input.
             
@@ -694,7 +675,7 @@ def main():
                 worldSize[0] = int(worldSize[0])
                 break
         
-        
+        # Gets and validates the height of the blank world from the user.
         while True:
             worldSize[1] = input("Height of the world (int): ") # Gets the height of the world from console input.
             
@@ -707,30 +688,43 @@ def main():
         # Builds a world full of air that is 'worldSize[0]' by 'worldSize[1]'.
         for x in range(worldSize[0]):
             world.append([])
+            
             for y in range(worldSize[1]):
                 world[x].append({"type":0, "state":0, "rotation":0, "health":0})
         
+        
+        # Gets the width of the screen in pixels.
         scrW = pygame.display.Info().current_w
+        
+        # Gets the height of the screen in pixels.
         scrH = pygame.display.Info().current_h
+        
+        # Sets the display mode.
         window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
         
+        
+        # Imports block data and resizes sprites.
         if scrW % 16 == 0:
             blockData = importBlockData(scrW / 16)
             defaultBlockWidth = scrW / 16
+            
         else:
+            # If the screen width isn't divisible by 16,
+            # this rounds sprite sizes up by 1 so there isn't any artifacting.
             blockData = importBlockData(scrW / 16 + 1)
             defaultBlockWidth = scrW / 16 + 1
             print("fuck you and your disgusting screen resolution")
+            
+            
 
-    ### DISPLAY AND UI VALUES ##############################################################################
+    #########################################
+    ############## UI CREATION ##############
+    #########################################      
+            
     
     # there is literally no point to this the game is fullscreen.
     pygame.display.set_caption("BaseRace")
-
-    dispInventory = True
      
-    #colors = {"orange":[255, 128, 0], "blue":[0, 128, 255], "white":[255, 255, 255], "black":[0, 0, 0], "dark blue":[0, 64, 128], "dark orange":[128, 64, 0], "green":[0, 255, 0], "grey":[223, 223, 223]} # Dictionary of colors
-    
     # Font to display the fps with. Also used for displaying debug stuff. 
     fpsDisplayFont = pygame.font.Font(os.path.join("data", "fonts", "desc.ttf"), int(scrH / 50))
     
@@ -748,39 +742,65 @@ def main():
     
     # Position of the top-left corner of the energy bar on the screen.
     energyBarPos = [scrW * (25 / 1920), scrH * (19 / 20) - scrH * (25 / 1080)]
-
+    
+    ### INVENTORY STUFF ####################################################################################
+    
+    # Current scroll, in pixels, of the inventory.
     inventoryScroll = 0
 
+    # Target scroll, as a list index, that the inventory is moving to.
     targetScroll = 0
 
-
+    # Whether or not the inventory is being displayed.
+    dispInventory = True
+    
+    #List indexes in the inventory are arbitrary.
+    # 0 - Block ID
+    # 1 - Amount owned
     playerInventory = []
-
-    inventorySprite = pygame.Surface([blockData[0]["sprites"][0][0].get_height(), blockData[0]["sprites"][0][0].get_height() * len(blockData)]).convert()
-
+    
+    # Hollow red sprite that shows what block is selected.
     inventorySelection = pygame.Surface([blockData[0]["sprites"][0][0].get_height(), blockData[0]["sprites"][0][0].get_height()]).convert_alpha()
     inventorySelection.fill([255, 0, 0, 255])
     inventorySelection.fill([0, 0, 0, 0], pygame.Rect([inventorySelection.get_height() / 20, inventorySelection.get_height() / 20], [inventorySelection.get_height() * 9 / 10, inventorySelection.get_height() * 9 / 10]))
+    
+    # Height, in blocks, of the inventory sprite.
+    inventorySpriteHeight = 0
 
-    for sprite in range(len(blockData)):
-        playerInventory.append(16)
-        inventorySprite.blit(blockData[sprite]["sprites"][0][0], [0, blockData[0]["sprites"][0][0].get_height() * sprite])
-
+    # Adds all of the placeable blocks to the player inventory.
+    for block in range(len(blockData)):
+        if blockData[block]["placeable"]:
+            playerInventory.append([block, 16])
+            
+            inventorySpriteHeight += 1
+    
+    
+    # Sprite that all of the block sprites in the inventory are put on top of.
+    inventorySprite = pygame.Surface([blockData[0]["sprites"][0][0].get_height(), blockData[0]["sprites"][0][0].get_height() * inventorySpriteHeight]).convert()
+    
+    # Puts block sprites on top of the player inventory sprite.
+    for sprite in range(len(playerInventory)):
+        inventorySprite.blit(blockData[playerInventory[sprite][0]]["sprites"][0][0], [0, blockData[0]["sprites"][0][0].get_height() * sprite])
+    
+    # Lowest scroll, in pixels, than the inventory sprite can be blitted to.
     minScroll = scrH / 2 + inventorySelection.get_height() / 2 - (len(playerInventory) * inventorySelection.get_height()) + scrW / 16
+    
+    # Highest scroll, in pixels, than the inventory sprite can be blitted to.
     maxScroll = (scrH / 2) - (scrW / 32) + scrW / 16
     
+    # Font used to display block counts and block names in the inventory.
     inventorySmallText = pygame.font.Font(os.path.join("data", "fonts", "VT323-Regular.ttf"), int(scrW / 32))
-
+    
+    # Two sprites used to display where the player is attempting to place a block, and whether it's possible.
     blockSelectionSprites = [pygame.Surface([blockData[0]["sprites"][0][0].get_height(), blockData[0]["sprites"][0][0].get_height()]).convert_alpha(), pygame.Surface([blockData[0]["sprites"][0][0].get_height(), blockData[0]["sprites"][0][0].get_height()]).convert_alpha()]
+    
+    # blockSelectionSprites[0] is used if the block placement is possible. It is a transparent green border that's put onto the world.
     blockSelectionSprites[0].fill([0, 255, 0, 255])
     blockSelectionSprites[0].fill([0, 0, 0, 0], pygame.Rect([inventorySelection.get_height() / 20, inventorySelection.get_height() / 20], [inventorySelection.get_height() * 9 / 10, inventorySelection.get_height() * 9 / 10]))
-
+    
+    # blockSelectionSprites[1] is used if the block placement is not possible. It is a transparent red border that's put onto the world.
     blockSelectionSprites[1].fill([255, 0, 0, 255])
     blockSelectionSprites[1].fill([0, 0, 0, 0], pygame.Rect([inventorySelection.get_height() / 20, inventorySelection.get_height() / 20], [inventorySelection.get_height() * 9 / 10, inventorySelection.get_height() * 9 / 10]))
-
-    
-    
-    ### CAMERA VARIABLES ###################################################################################
     
     # Position of the camera
     global cameraPos
@@ -843,17 +863,22 @@ def main():
     # A clock for doing clock-related things, like getting FPS.
     t = pygame.time.Clock()
     
-    #########################################################################################################################################################################################
-    ### INITIALIZATION ######################################################################################################################################################################
-    #########################################################################################################################################################################################
+    
+    #########################################
+    ############ SPRITE RESIZING ############
+    #########################################
+    
+    
     global blockSprites
     blockSprites = [] # List of resized sprites. These are what are actually blitted to the window.
     
 
     for block in range(len(blockData)):
         blockSprites.append([])
+        
         for state in range(len(blockData[block]["sprites"])):
             blockSprites[block].append([])
+            
             for rotation in range(len(blockData[block]["sprites"][state])):
                 blockSprites[block][state].append(blockData[block]["sprites"][state][rotation].copy())
 
@@ -869,6 +894,7 @@ def main():
     
     while not gameExit:
         t.tick() # Ticks the clock. As of version 0.0.wheneverTazwelBitchedAtMeToPutMoreCommentsInMyCode, this is only used for displaying FPS.
+        
         mousePos = pygame.mouse.get_pos() # Gets mouse position.
         
         #Event handler, gets & handles input.
@@ -939,8 +965,6 @@ def main():
                     if targetScroll < len(playerInventory) - 1 and dispInventory:
                         targetScroll += 1
 
-                    
-
             elif event.type == MOUSEBUTTONUP:
                 # This sets corresponding mouse buttons in 'inputSet' to 0 if they're not being pushed.
                 if event.button == 1: # Left click detection
@@ -948,6 +972,8 @@ def main():
                     
                 elif event.button == 3: # Right click detection
                     inputSet[5] = 0
+        
+        
         
         # Checks if the mouse is being clicked, and makes the player start shooting if it is.
         if inputSet[4] == 1:
@@ -960,7 +986,6 @@ def main():
             
         else:
             players[0]["isShooting"] = False
-        
         
         
         
@@ -1012,8 +1037,7 @@ def main():
                     
             else: # If neither left NOR right are being pressed, don't move the player vertically.
                 playerDelta[0] = 0 # Don't move the player horizontally.
-                
-                
+                 
         
         # Makes sure the player does not go outside the world by checking if incrementing the player's position by
         # playerDelta would put it outside of the world.
@@ -1034,15 +1058,20 @@ def main():
         ### COLLISIONS ###
         
         preArcPos = [0, 0]
+        
         nextPlayerPos = [players[0]["pos"][0] + playerDelta[0], players[0]["pos"][1] + playerDelta[1]]
+        
         pointPos = [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]
+        
         collideRange = [[int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]]
+        
         magnitude = math.sqrt(math.pow(playerDelta[0], 2) + math.pow(playerDelta[1], 2))
         
         
         for block in enumerate(collideRange):
             if block[1][0] < 0 or block[1][0] >= worldSize[0]:
                 collideRange[block[0]] = "EOW"
+                
             if block[1][1] < 0 or block[1][1] >= worldSize[1]:
                 collideRange[block[0]] = "EOW"
         
@@ -1059,18 +1088,22 @@ def main():
                     if (nextPlayerPos[0] - pointPos[0]) != 0:
                         if block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]:
                             collideAngle = math.atan(((nextPlayerPos[1] - pointPos[1])) / ((nextPlayerPos[0] - pointPos[0])))
+                            
                             playerDelta = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
                             
                         elif block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)]:
                             collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / ((nextPlayerPos[0] - pointPos[0])))
+                            
                             playerDelta = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
 
                         elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)]:
-                            collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
+                            collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0]))
+                            
                             playerDelta = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
                         
                         elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]:
-                            collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
+                            collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0]))
+                            
                             playerDelta = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
                     
                 
@@ -1078,12 +1111,16 @@ def main():
                 if players[0]["pos"][0] >= block[0] - 0.05 and players[0]["pos"][0] <= block[0] + 1.05:
                     if block[1] - players[0]["pos"][1] <= 0:
                         playerDelta[1] = block[1] - (players[0]["pos"][1] + 0.5) + 2
+                        
                     else:
                         playerDelta[1] = block[1] - (players[0]["pos"][1] + 0.5)
+                
+                
                 
                 if players[0]["pos"][1] >= block[1] - 0.05 and players[0]["pos"][1] <= block[1] + 1.05:
                     if block[0] - players[0]["pos"][0] <= 0:
                         playerDelta[0] = block[0] - (players[0]["pos"][0] + 0.5) + 2
+                        
                     else:
                         playerDelta[0] = block[0] - (players[0]["pos"][0] + 0.5)
                 
@@ -1103,10 +1140,10 @@ def main():
         
             playerLaserDist = int((3 * scrW) / (8 * cameraZoom)) # Scales the distance from the player's laser to the player
             
-            
             if cameraZoom == 16: # This is for maintaining pixel-perfectness for when the camera is at default zoom.
                 
                 healthSprite = pygame.Surface([scrW / cameraZoom, scrW / cameraZoom]).convert_alpha()
+                
                 healthSprite.fill([0, 0, 0, 64])
                 
                 # Loops through the block sprites and resizes them to a perfect whole-number side-length for 1920x1080
@@ -1122,6 +1159,7 @@ def main():
                 #Same thing as the other loop, it just doesn't bother with integer division and rounds up to the nearest pixel.
                 
                 healthSprite = pygame.Surface([int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1]).convert_alpha()
+                
                 healthSprite.fill([0, 0, 0, 64])
                 
                 for block in range(len(blockSprites)):
@@ -1165,7 +1203,6 @@ def main():
                     continue
                 else:
                     for row in range(int(cameraPos[1] - ((cameraZoom * (scrH / scrW)) // 2)) - 1, int(cameraPos[1] + ((cameraZoom * (scrH / scrW)) // 2)) + 2): # Scans accross the world area of the world visible to the camera in rows
-                        
                         if row < 0 or row >= worldSize[1]: # If the row is outside of the world, continue, because that would crash the program.
                             continue
                         
@@ -1173,9 +1210,12 @@ def main():
                          # Blit the corresponding sprite to the block type in the column and row in the relative position of the block on the screen.
                             window.blit(blockSprites[world[column][row]["type"]][world[column][row]["state"]][world[column][row]["rotation"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)])
                             
+                            
                             if world[column][row]["type"] != 0 and world[column][row]["health"] / blockData[world[column][row]["type"]]["health"] != 1:
                                 healthSprite.fill([0, 0, 0, 64])
+                                
                                 healthSprite.fill([0, 0, 0, 0], pygame.Rect([(healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / blockData[world[column][row]["type"]]["health"]), (healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / blockData[world[column][row]["type"]]["health"])], [healthSprite.get_width() * (world[column][row]["health"] / blockData[world[column][row]["type"]]["health"]), healthSprite.get_width() * (world[column][row]["health"] / blockData[world[column][row]["type"]]["health"])]))
+                                
                                 window.blit(healthSprite, getScreenPos([column, row]))
                                 
                          # If the above line, or anything in this loop breaks, make it so I'm the one to fix it.
@@ -1193,8 +1233,10 @@ def main():
                         
                         if player["energy"] - (time.time() - lastFrameTime) * 30 > 0:
                             player["energy"] = player["energy"] - (time.time() - lastFrameTime) * 30
+                            
                         else:
                             player["energy"] = 0
+                            
                 
                 if player["energy"] < 100 and player["energy"] + (time.time() - lastFrameTime) * 15 < 100:
                     player["energy"] += (time.time() - lastFrameTime) * 15
@@ -1214,12 +1256,10 @@ def main():
             
             for player in players:
                 
-                
                 relPlayerPos = getScreenPos(player["pos"]) # Gets the relative position of the player on the screen
 
                 if spriteWorldPos in [[int(player["pos"][0] + 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] + 0.5), int(player["pos"][1] - 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] - 0.5)]]:
                     denyBlockPlacement = True
-
                 
                 
                 # This block is what displays players.
@@ -1254,6 +1294,7 @@ def main():
                 else:
                     pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [relPlayerPos[0], relPlayerPos[1] + playerLaserDist], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
                 
+                
                 # If debug tools are enabled, this displays player information.
                 if displayPlayerInfo:
                     for attribute in enumerate(player):
@@ -1261,52 +1302,63 @@ def main():
             
             ### EVERYTHING PAST THIS POINT IS UI ###
             
-            #pygame.draw.circle(window, [255, 0, 0], getScreenPos(pointPos), 5)
 
             if dispInventory:
-                #inventoryScroll = (scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth)
-
+                
+                window.fill([0, 0, 0], pygame.Rect([(scrW * 15 / 16) - 8, 0], [scrW /16 + 8, scrH]))
+                
 
                 if denyBlockPlacement:
                     window.blit(blockSelectionSprites[1], getScreenPos(spriteWorldPos))
 
                 else:
                     window.blit(blockSelectionSprites[0], getScreenPos(spriteWorldPos))
+                    
                 
                 if abs(inventoryScroll - ((scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth))) < 20:
                     inventoryScroll = (scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth)
                 else:
                     inventoryScroll = int(((scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth) - inventoryScroll) * (time.time() - lastFrameTime) * 25) + inventoryScroll
                     
+                    
                 window.blit(inventorySprite, [(15 / 16) * scrW, inventoryScroll])
                 
                 window.blit(inventorySelection, [(15 / 16) * scrW, scrH / 2 + (scrW / 32)])
                 
-                currentName = inventorySmallText.render(str(blockData[int(((scrH / 2 + scrW / 32) - inventoryScroll) / defaultBlockWidth)]["name"]), 0, (0, 255, 0))
+                currentName = inventorySmallText.render(str(blockData[playerInventory[int(((scrH / 2 + scrW / 32) - inventoryScroll) / defaultBlockWidth)][0]]["name"]), 0, (0, 255, 0))
                 
                 window.blit(currentName, [(scrW * 15 / 16) - currentName.get_width() - 8, scrH / 2 + scrW / 32 + 30])
                 
+                
                 for i in range(len(playerInventory)):
-                    window.blit(inventorySmallText.render(str(playerInventory[i]), 0, (0, 255, 0)), [(15 / 16) * scrW + 8, inventoryScroll + (i * defaultBlockWidth)])
+                    window.blit(inventorySmallText.render(str(playerInventory[i][1]), 0, (0, 255, 0)), [(15 / 16) * scrW + 8, inventoryScroll + (i * defaultBlockWidth)])
+                    
+                    
             
             # Draws health and energy bar borders.
             pygame.draw.rect(window, [32, 255, 64], pygame.Rect(healthBarPos, statusBarDims), 2)
+            
             pygame.draw.rect(window, [64, 128, 255], pygame.Rect(energyBarPos, statusBarDims), 2)
 
-    
             
             # Draws health and energy bar interiors.
             window.fill([32, 255, 64], pygame.Rect(healthBarPos, [statusBarDims[0] * (players[0]["health"] / 100), statusBarDims[1]]))
+            
             window.fill([64, 128, 255], pygame.Rect(energyBarPos, [statusBarDims[0] * (players[0]["energy"] / 100), statusBarDims[1]]))
+            
             
             # Draws text over health and energy bars.
             window.blit(monoFont.render("HEALTH", 0, (32, 128, 16)), healthBarPos)
+            
             window.blit(monoFont.render("ENERGY", 0, (16, 64, 128)), energyBarPos)
-                
+               
+               
             # Framerate counter. Delete these at will.
             # (but if you're going to, get rid of 'fpsDisplayFont')
             window.blit(fpsDisplayFont.render("fps: " + str(fpsCounter.get_fps()), 0, (255, 0, 0)), [0, 0])
+            
             fpsCounter.tick()
+        
         
             #Updates the screen
             lastFrameTime = time.time()
