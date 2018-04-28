@@ -1325,7 +1325,7 @@ def main():
                 
                 window.blit(inventorySelection, [(15 / 16) * scrW, scrH / 2 + (scrW / 32)])
                 
-                currentName = inventorySmallText.render(str(blockData[playerInventory[int(((scrH / 2 + scrW / 32) - inventoryScroll) / defaultBlockWidth)][0]]["name"]), 0, (0, 255, 0))
+                currentName = inventorySmallText.render(str(blockData[playerInventory[int(((scrH / 2 + scrW / 32) - inventoryScroll) / defaultBlockWidth)][0]]["name"]), 0, (0, 255, 0), (0, 0, 0))
                 
                 window.blit(currentName, [(scrW * 15 / 16) - currentName.get_width() - 8, scrH / 2 + scrW / 32 + 30])
                 
