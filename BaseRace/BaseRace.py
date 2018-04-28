@@ -594,7 +594,7 @@ def main():
         scrH = pygame.display.Info().current_h
         
         # Sets the display mode.
-        window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
+        window = pygame.display.set_mode((scrW, scrH), FULLSCREEN | HWSURFACE | DOUBLEBUF)
         
         
         # Imports block data and resizes sprites.
@@ -744,6 +744,10 @@ def main():
     energyBarPos = [scrW * (25 / 1920), scrH * (19 / 20) - scrH * (25 / 1080)]
     
     ### INVENTORY STUFF ####################################################################################
+    
+    inventoryDarkArea = pygame.Surface([defaultBlockWidth + 8, scrH]).convert_alpha()
+    
+    inventoryDarkArea.fill([32, 32, 32, 128])
     
     # Current scroll, in pixels, of the inventory.
     inventoryScroll = 0
@@ -1305,15 +1309,13 @@ def main():
 
             if dispInventory:
                 
-                window.fill([0, 0, 0], pygame.Rect([(scrW * 15 / 16) - 8, 0], [scrW /16 + 8, scrH]))
-                
-
                 if denyBlockPlacement:
                     window.blit(blockSelectionSprites[1], getScreenPos(spriteWorldPos))
 
                 else:
                     window.blit(blockSelectionSprites[0], getScreenPos(spriteWorldPos))
-                    
+                
+                window.blit(inventoryDarkArea, [(scrW * 15 / 16) - 8, 0])
                 
                 if abs(inventoryScroll - ((scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth))) < 20:
                     inventoryScroll = (scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth)
@@ -1323,16 +1325,20 @@ def main():
                     
                 window.blit(inventorySprite, [(15 / 16) * scrW, inventoryScroll])
                 
-                window.blit(inventorySelection, [(15 / 16) * scrW, scrH / 2 + (scrW / 32)])
-                
-                currentName = inventorySmallText.render(str(blockData[playerInventory[int(((scrH / 2 + scrW / 32) - inventoryScroll) / defaultBlockWidth)][0]]["name"]), 0, (0, 255, 0), (0, 0, 0))
-                
-                window.blit(currentName, [(scrW * 15 / 16) - currentName.get_width() - 8, scrH / 2 + scrW / 32 + 30])
-                
-                
                 for i in range(len(playerInventory)):
                     window.blit(inventorySmallText.render(str(playerInventory[i][1]), 0, (0, 255, 0)), [(15 / 16) * scrW + 8, inventoryScroll + (i * defaultBlockWidth)])
-                    
+                
+                window.blit(inventorySelection, [(15 / 16) * scrW, scrH / 2 + (scrW / 32)])
+                
+                currentName = inventorySmallText.render(str(blockData[playerInventory[int(((scrH / 2 + scrW / 32) - inventoryScroll) / defaultBlockWidth)][0]]["name"]), 0, (0, 255, 0))
+                
+                currentNameSprite = pygame.Surface(currentName.get_size()).convert_alpha()
+                
+                currentNameSprite.fill([32, 32, 32, 128])
+                
+                currentNameSprite.blit(currentName, [0, 0])
+                
+                window.blit(currentNameSprite, [(scrW * 15 / 16) - currentName.get_width() - 8, scrH / 2 + scrW / 32 + 30])
                     
             
             # Draws health and energy bar borders.
