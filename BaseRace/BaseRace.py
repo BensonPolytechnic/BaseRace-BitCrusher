@@ -1,15 +1,16 @@
 # *** GRAPHICS ENGINE ***
 # This is a thing that makes pixels on a screen turn pretty colors
 
-import pygame, os, time, math, importlib.util
+import pygame, os, time, math, importlib.util, random
 from pygame.locals import *
 
 spriteImportFunc = importlib.util.spec_from_file_location("blocksprites.py", os.path.join("data", "blocks", "blocksprites.py"))
 blocksprites = importlib.util.module_from_spec(spriteImportFunc)
 spriteImportFunc.loader.exec_module(blocksprites)
 
-
+pygame.mixer.pre_init(44100, 16, 2, 4096)
 pygame.init()
+pygame.mixer.init()
 pygame.font.init()
 
 # Takes a position of a point in the world, and returns its position on the screen in pixels.
@@ -489,8 +490,6 @@ def toSlope(deg):
     
     else:
         return [math.tan((deg - 360) * (math.pi / 180)), 1]
-    
-    
 
 # Mildly important.
 def main():
@@ -715,8 +714,25 @@ def main():
             defaultBlockWidth = scrW / 16 + 1
             print("fuck you and your disgusting screen resolution")
             
-            
+    #########################################
+    ############# SOUND IMPORTS #############
+    #########################################
+    
+    sounds = []
+    
+    # Sound indexes:
+    # 0 - Laser
+    # 1 - Laser start
+    # 2 - Laser out of energy
 
+    sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "laser.ogg")))
+    sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "startLaser.ogg")))
+    sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "outOfEnergy.ogg")))
+    
+    laserSoundTime = 0
+    
+    laserHold = False
+    
     #########################################
     ############## UI CREATION ##############
     #########################################      
@@ -987,9 +1003,36 @@ def main():
 
             else:
                 players[0]["isShooting"] = True
+                
+                if players[0]["energy"] > 1:
+                    if time.time() - laserSoundTime > 0.5:
+                        sounds[0].play()
+                        laserSoundTime = time.time()
+                    
+                    if laserHold == False:
+                        sounds[1].play()
+                        laserHold = True
+                    players[0]["isShooting"] = True
+                    
+                else:
+                    if laserHold:
+                        sounds[2].play()
+                        laserSoundTime = time.time()
+                        laserHold = False
+                        
+                    elif time.time() - laserSoundTime > 2:
+                        sounds[2].play()
+                        laserSoundTime = time.time()
+                        
             
         else:
             players[0]["isShooting"] = False
+            if laserHold:
+                sounds[0].fadeout(1000)
+                laserHold = False
+            
+            elif not laserHold and players[0]["energy"] < 1:
+                sounds[2].stop()
         
         
         
@@ -1234,7 +1277,14 @@ def main():
             for player in players:
                 if player["isShooting"]:
                     if player["energy"] - (time.time() - lastFrameTime) * 30 > 0:
-                        pygame.draw.line(window, teams[player["team"]]["color"], getScreenPos(player["pos"]), getScreenPos(raycast(player["pos"], player["rotation"][0], player["rotation"][1], player["team"])), 4)
+                        colorMultiplier = random.randint(-2, 3)
+                        if colorMultiplier > 0:
+                            
+                            pygame.draw.line(window, [(255 - teams[player["team"]]["color"][0]) / 6 * colorMultiplier + teams[player["team"]]["color"][0], (255 - teams[player["team"]]["color"][1]) / 6 * colorMultiplier + teams[player["team"]]["color"][1], (255 - teams[player["team"]]["color"][2]) / 6 * colorMultiplier + teams[player["team"]]["color"][2]], getScreenPos(player["pos"]), getScreenPos(raycast(player["pos"], player["rotation"][0], player["rotation"][1], player["team"])), 4)
+                        
+                        else:
+                                                        
+                            pygame.draw.line(window, [(teams[player["team"]]["color"][0]) / 4 * colorMultiplier + teams[player["team"]]["color"][0], (teams[player["team"]]["color"][1]) / 4 * colorMultiplier + teams[player["team"]]["color"][1], (teams[player["team"]]["color"][2]) / 4 * colorMultiplier + teams[player["team"]]["color"][2]], getScreenPos(player["pos"]), getScreenPos(raycast(player["pos"], player["rotation"][0], player["rotation"][1], player["team"])), 4)
                         
                         if player["energy"] - (time.time() - lastFrameTime) * 30 > 0:
                             player["energy"] = player["energy"] - (time.time() - lastFrameTime) * 30
