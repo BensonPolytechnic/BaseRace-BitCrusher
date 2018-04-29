@@ -1087,7 +1087,6 @@ def main():
             if blockData[world[block[0]][block[1]]["type"]]["collidable"]:
                 
                 if math.sqrt(math.pow(nextPlayerPos[0] - pointPos[0], 2) + math.pow(nextPlayerPos[1] - pointPos[1], 2)) < 0.45:
-                    #math.sqrt(math.pow(playerDeta[0], 2) + math.pow(playerDeta[1], 2))
                     
                     if (nextPlayerPos[0] - pointPos[0]) != 0:
                         if block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]:
@@ -1129,7 +1128,7 @@ def main():
                         playerDelta[0] = block[0] - (players[0]["pos"][0] + 0.5)
                 
                     
-                        
+                  
         # Changes player position by playerDelta
         players[0]["pos"] = [players[0]["pos"][0] + playerDelta[0], players[0]["pos"][1] + playerDelta[1]]
         
@@ -1138,70 +1137,72 @@ def main():
         # Also allows the player to look around with the mouse.
         cameraPos = [cameraPos[0] + ((((mousePos[0] - (scrW / 2)) / (scrW / cameraZoom)) / 200) + (players[0]["pos"][0] - cameraPos[0]) / 50) * (t.get_time() * 0.5), cameraPos[1] + ((((mousePos[1] - (scrH / 2)) / (scrW / cameraZoom)) / 200) + (players[0]["pos"][1] - cameraPos[1]) / 50) * (t.get_time() * 0.5)] 
         
-
-        # Determines if sprites should be resized.
-        if cameraZoom != previousZoom: # Checks if the camera zoom is different
         
-            playerLaserDist = int((3 * scrW) / (8 * cameraZoom)) # Scales the distance from the player's laser to the player
-            
-            if cameraZoom == 16: # This is for maintaining pixel-perfectness for when the camera is at default zoom.
-                
-                healthSprite = pygame.Surface([scrW / cameraZoom, scrW / cameraZoom]).convert_alpha()
-                
-                healthSprite.fill([0, 0, 0, 64])
-                
-                # Loops through the block sprites and resizes them to a perfect whole-number side-length for 1920x1080
-                for block in range(len(blockSprites)):
-                    for state in range(len(blockSprites[block])):
-                        for rotation in range(len(blockSprites[block][state])):
-                            blockSprites[block][state][rotation] = blockData[block]["sprites"][state][rotation].copy()
-                # Note that if this were written in any other programming language on Earth, this would be a
-                # huge and disgusting memory leak, because the previous sprites aren't actually deleted.
-                
-            else: # If the camera is no longer in the default zoom, (for quick camera pans and zoom-outs), don't bother with integer division
-                
-                #Same thing as the other loop, it just doesn't bother with integer division and rounds up to the nearest pixel.
-                
-                healthSprite = pygame.Surface([int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1]).convert_alpha()
-                
-                healthSprite.fill([0, 0, 0, 64])
-                
-                for block in range(len(blockSprites)):
-                    for state in range(len(blockSprites[block])):
-                        for rotation in range(len(blockSprites[block][state])):
-                            blockSprites[block][state][rotation] = pygame.transform.scale(blockData[block]["sprites"][state][rotation].copy(), [int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1])
-        
-        # If you screw with the following line, all of the sprites will be resized every single frame even if they don't have to be.
-        
-        #///CAUTION///CAUTION///CAUTION///CAUTION
-        previousZoom = cameraZoom# DO NOT TOUCH
-        #///CAUTION///CAUTION///CAUTION///CAUTION
-        
-        
-        
-        #This makes it so the camera does not go outside the world when it isn't zoomed out very far
-        if cameraZoom <= worldSize[0]: # Check if the number of blocks that can fit in the width of the screen is less than the width of the world
-            
-            if cameraPos[0] - (cameraZoom / 2) < 0: # Check if the camera is outside the left edge of the world
-                cameraPos[0] = cameraZoom / 2 # Move the camera back into the world if the above is true.
-                
-            elif cameraPos[0] + (cameraZoom / 2) > worldSize[0]: # Check if the camera is outside the right edge of the world
-                cameraPos[0] = worldSize[0] - (cameraZoom / 2) # Move the camera back into the world if the above is true.
-            
-            if cameraPos[1] < (cameraZoom * (scrH / scrW)) / 2: # Check if the camera is outside the top edge of the world
-                cameraPos[1] = (cameraZoom * (scrH / scrW)) / 2 # Move the camera back into the world if the above is true.
-                
-            elif cameraPos[1] > worldSize[1] - (cameraZoom * (scrH / scrW)) / 2: # Check if the camera is outside the bottom edge of the world
-                cameraPos[1] = worldSize[1] - (cameraZoom * (scrH / scrW)) / 2 # Move the camera back into the world if the above is true.
-                
-        else: # If the camera DOES exceed the world size, meaning restricting it to the world is impossible:
-            window.fill([255, 255, 255]) # Fill the screen with white (or whatever we decide to make the color of air in the future), so there aren't weird graphical artifacts.
-
-            
         # This the important thing.
         # It renders the section of the world that's visible to the camera.
         # It only does so when ~1/120th of a second has passed.
         if time.time() - lastFrameTime > 0.006:
+            
+            
+            #This makes it so the camera does not go outside the world when it isn't zoomed out very far
+            if cameraZoom <= worldSize[0]: # Check if the number of blocks that can fit in the width of the screen is less than the width of the world
+                
+                if cameraPos[0] - (cameraZoom / 2) < 0: # Check if the camera is outside the left edge of the world
+                    cameraPos[0] = cameraZoom / 2 # Move the camera back into the world if the above is true.
+                    
+                elif cameraPos[0] + (cameraZoom / 2) > worldSize[0]: # Check if the camera is outside the right edge of the world
+                    cameraPos[0] = worldSize[0] - (cameraZoom / 2) # Move the camera back into the world if the above is true.
+                
+                if cameraPos[1] < (cameraZoom * (scrH / scrW)) / 2: # Check if the camera is outside the top edge of the world
+                    cameraPos[1] = (cameraZoom * (scrH / scrW)) / 2 # Move the camera back into the world if the above is true.
+                    
+                elif cameraPos[1] > worldSize[1] - (cameraZoom * (scrH / scrW)) / 2: # Check if the camera is outside the bottom edge of the world
+                    cameraPos[1] = worldSize[1] - (cameraZoom * (scrH / scrW)) / 2 # Move the camera back into the world if the above is true.
+                    
+            else: # If the camera DOES exceed the world size, meaning restricting it to the world is impossible:
+                window.fill([255, 255, 255]) # Fill the screen with white (or whatever we decide to make the color of air in the future), so there aren't weird graphical artifacts.
+            
+            
+            
+            # Determines if sprites should be resized.
+            if cameraZoom != previousZoom: # Checks if the camera zoom is different
+            
+                playerLaserDist = int((3 * scrW) / (8 * cameraZoom)) # Scales the distance from the player's laser to the player
+                
+                if cameraZoom == 16: # This is for maintaining pixel-perfectness for when the camera is at default zoom.
+                    
+                    healthSprite = pygame.Surface([scrW / cameraZoom, scrW / cameraZoom]).convert_alpha()
+                    
+                    healthSprite.fill([0, 0, 0, 64])
+                    
+                    # Loops through the block sprites and resizes them to a perfect whole-number side-length for 1920x1080
+                    for block in range(len(blockSprites)):
+                        for state in range(len(blockSprites[block])):
+                            for rotation in range(len(blockSprites[block][state])):
+                                blockSprites[block][state][rotation] = blockData[block]["sprites"][state][rotation].copy()
+                    # Note that if this were written in any other programming language on Earth, this would be a
+                    # huge and disgusting memory leak, because the previous sprites aren't actually deleted.
+                    
+                else: # If the camera is no longer in the default zoom, (for quick camera pans and zoom-outs), don't bother with integer division
+                    
+                    #Same thing as the other loop, it just doesn't bother with integer division and rounds up to the nearest pixel.
+                    
+                    healthSprite = pygame.Surface([int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1]).convert_alpha()
+                    
+                    healthSprite.fill([0, 0, 0, 64])
+                    
+                    for block in range(len(blockSprites)):
+                        for state in range(len(blockSprites[block])):
+                            for rotation in range(len(blockSprites[block][state])):
+                                blockSprites[block][state][rotation] = pygame.transform.scale(blockData[block]["sprites"][state][rotation].copy(), [int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1])
+            
+            
+            
+            #///CAUTION///CAUTION///CAUTION///CAUTION
+            previousZoom = cameraZoom# DO NOT TOUCH
+            #///CAUTION///CAUTION///CAUTION///CAUTION
+            
+            
             for column in range(int(cameraPos[0] - (cameraZoom / 2)) - 1, int(cameraPos[0] + (cameraZoom / 2)) + 1): # Scans accross the world area of the world visible to the camera in columns
                 if column < 0 or column > worldSize[0] - 1: # If the column is outside of the world, continue, because that would crash the program.
                     continue
@@ -1330,7 +1331,7 @@ def main():
                 
                 window.blit(inventorySelection, [(15 / 16) * scrW, scrH / 2 + (scrW / 32)])
                 
-                currentName = inventorySmallText.render(str(blockData[playerInventory[int(((scrH / 2 + scrW / 32) - inventoryScroll) / defaultBlockWidth)][0]]["name"]), 0, (0, 255, 0))
+                currentName = inventorySmallText.render(str(" " + blockData[playerInventory[int(((scrH / 2 + scrW / 32) - inventoryScroll) / defaultBlockWidth)][0]]["name"] + " "), 0, (0, 255, 0))
                 
                 currentNameSprite = pygame.Surface(currentName.get_size()).convert_alpha()
                 
