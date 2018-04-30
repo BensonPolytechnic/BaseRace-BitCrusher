@@ -1028,7 +1028,7 @@ def main():
         else:
             players[0]["isShooting"] = False
             if laserHold:
-                sounds[0].fadeout(1000)
+                sounds[0].fadeout(250)
                 laserHold = False
             
             elif not laserHold and players[0]["energy"] < 1:
