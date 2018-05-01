@@ -883,6 +883,8 @@ def main():
     # A clock for doing clock-related things, like getting FPS.
     t = pygame.time.Clock()
 
+    gameState = "credits"
+
 
     #########################################
     ############ SPRITE RESIZING ############
@@ -912,12 +914,23 @@ def main():
 
     while not gameExit:
         while gameState == "credits":
-                    # creating the surface
-        credit = pygame.Surface((scrW, scrH))
+            # creating the surface
+            credit = pygame.Surface((scrW, scrH))
 
-        for x in range(16):
-            for y in range(int(16 * scrH / scrW) + 1):
-                credit.blit(air["sprites"][0][0], (x * dbw, y * dbw))
+            for x in range(16):
+                for y in range(int(16 * scrH / scrW) + 1):
+                    credit.blit(blockData[0]["sprites"][0][0], (x * defaultBlockWidth, y * defaultBlockWidth))
+
+            text = [mainMenuFont.render("    Walker Green  Programmer", 0, (0,0,0)),
+                    mainMenuFont.render("  Vincent Vaughn  Programmer", 0, (0,0,0)),
+                    mainMenuFont.render("     Alex Elliot  EAtER oF SoULS", 0, (0,0,0)),
+                    mainMenuFont.render("Tazwell Borquist  Programmer", 0, (0,0,0))]
+
+            credit.blit(text[0], (0,0))
+
+
+
+
 
         while True:
             for i in pygame.event.get():
