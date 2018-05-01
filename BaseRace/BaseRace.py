@@ -451,7 +451,11 @@ def importBlockData(pixels):
 
     return blockInfo # eeeeeeeeeeeeee
 
-
+def inButton(button, point):
+    if point[0] >= button["pos"][0] and point[0] <= button["pos"][0] + button["dims"][0] and point[1] >= button["pos"][1] and point[1] <= button["pos"][1] + button["dims"][1]:
+        return True
+    else:
+        return False
 
 # This takes a slope and a direction (similar to 'raycast') and returns an angle in degrees.
 # which makes server communication slightly less painful.
@@ -490,6 +494,40 @@ def toSlope(deg):
 
     else:
         return [math.tan((deg - 360) * (math.pi / 180)), 1]
+
+def createMenuButtons():
+    menuButtons = {"PLAY":{}, "CREDITS":{}, "QUIT":{}}
+    
+    monospaceFont = pygame.font.Font(os.path.join("data", "fonts", "VT323-Regular.ttf"), int(scrH / 16))
+    
+    for button in enumerate(menuButtons):
+        
+        menuButtons[button[1]]["pos"] = [scrW / 16, scrH / 5 * button[0] + scrH / 5]
+        menuButtons[button[1]]["dims"] = [scrW / 5, scrH / 10]
+        
+        menuButtons[button[1]]["normal"] = pygame.Surface(menuButtons[button[1]]["dims"]).convert_alpha()
+        menuButtons[button[1]]["hover"] = pygame.Surface(menuButtons[button[1]]["dims"]).convert_alpha()
+        menuButtons[button[1]]["hold"] = pygame.Surface(menuButtons[button[1]]["dims"]).convert_alpha()
+         
+        menuButtons[button[1]]["normal"].fill([0, 0, 0, 255])
+        menuButtons[button[1]]["normal"].fill([0, 0, 0, 0], pygame.Rect([scrW / 240, scrW / 240], [menuButtons[button[1]]["dims"][0] - 2 * scrW / 240, menuButtons[button[1]]["dims"][1] - 2 * scrW / 240]))
+        menuButtons[button[1]]["normal"].fill([0, 0, 0, 0], pygame.Rect([0, scrW / 120], [menuButtons[button[1]]["dims"][0] - 2 * scrW / 120, menuButtons[button[1]]["dims"][1] - scrW / 60]))
+        
+        menuButtons[button[1]]["hover"].fill([0, 0, 0, 255])
+        menuButtons[button[1]]["hover"].fill([0, 0, 0, 0], pygame.Rect([scrW / 240, scrW / 240], [menuButtons[button[1]]["dims"][0] - 2 * scrW / 240, menuButtons[button[1]]["dims"][1] - 2 * scrW / 240]))
+        menuButtons[button[1]]["hover"].fill([0, 0, 0, 0], pygame.Rect([0, scrW / 120], [scrW / 120, menuButtons[button[1]]["dims"][1] - scrW / 60]))
+        
+        menuButtons[button[1]]["hold"].fill([0, 0, 0, 255])
+        menuButtons[button[1]]["hold"].fill([0, 0, 0, 0], pygame.Rect([scrW / 240, scrW / 240], [menuButtons[button[1]]["dims"][0] - 2 * scrW / 240, menuButtons[button[1]]["dims"][1] - 2 * scrW / 240]))
+        menuButtons[button[1]]["hold"].fill([0, 0, 0, 0], pygame.Rect([0, scrW / 120], [scrW / 120, menuButtons[button[1]]["dims"][1] - scrW / 60]))
+        
+        menuButtons[button[1]]["normal"].blit(monospaceFont.render(button[1], 0, [0, 0, 0]), [scrW / 240, scrW / 120])
+        menuButtons[button[1]]["hover"].blit(monospaceFont.render(button[1], 0, [255, 0, 0]), [scrW / 240, scrW / 120])
+        menuButtons[button[1]]["hold"].blit(monospaceFont.render(button[1], 0, [0, 255, 0]), [scrW / 240, scrW / 120])
+    
+    return menuButtons
+        
+        
 
 # Mildly important.
 def main():
@@ -735,9 +773,28 @@ def main():
 
     #########################################
     ############## UI CREATION ##############
+<<<<<<< HEAD
     #########################################
 
 
+=======
+    #########################################      
+    
+    mainMenuSprite = pygame.Surface([scrW, scrH])
+        
+    for x in range(16):
+        for y in range(int(16 * scrH / scrW) + 1):
+            mainMenuSprite.blit(blockData[0]["sprites"][0][0], [x * defaultBlockWidth, y * defaultBlockWidth])
+        
+    mainMenuButtons = createMenuButtons()
+    
+    mainMenuFont = pygame.font.Font(os.path.join("data", "fonts", "audiowide.ttf"), int(defaultBlockWidth))
+    
+    mainMenuText = mainMenuFont.render("BASE RACE", 0, [0, 0, 0])
+    
+    mainMenuSprite.blit(mainMenuText, [scrW / 2 - mainMenuSprite.get_width() / 2, -30])
+    
+>>>>>>> 969bab60caa491f515a0f7a69fe1ee7165815f0e
     # there is literally no point to this the game is fullscreen.
     pygame.display.set_caption("BaseRace")
 
@@ -762,9 +819,15 @@ def main():
     ### INVENTORY STUFF ####################################################################################
 
     inventoryDarkArea = pygame.Surface([defaultBlockWidth + 8, scrH]).convert_alpha()
+<<<<<<< HEAD
 
     inventoryDarkArea.fill([32, 32, 32, 128])
 
+=======
+    
+    inventoryDarkArea.fill([0, 0, 0])
+    
+>>>>>>> 969bab60caa491f515a0f7a69fe1ee7165815f0e
     # Current scroll, in pixels, of the inventory.
     inventoryScroll = 0
 
@@ -821,7 +884,13 @@ def main():
     # blockSelectionSprites[1] is used if the block placement is not possible. It is a transparent red border that's put onto the world.
     blockSelectionSprites[1].fill([255, 0, 0, 255])
     blockSelectionSprites[1].fill([0, 0, 0, 0], pygame.Rect([inventorySelection.get_height() / 20, inventorySelection.get_height() / 20], [inventorySelection.get_height() * 9 / 10, inventorySelection.get_height() * 9 / 10]))
+<<<<<<< HEAD
 
+=======
+    
+    clickPos = None
+    
+>>>>>>> 969bab60caa491f515a0f7a69fe1ee7165815f0e
     # Position of the camera
     global cameraPos
     cameraPos = [16.0, 16.0]
@@ -882,10 +951,17 @@ def main():
 
     # A clock for doing clock-related things, like getting FPS.
     t = pygame.time.Clock()
+<<<<<<< HEAD
 
     gameState = "credits"
 
 
+=======
+    
+    gameState = "menu"
+    
+    
+>>>>>>> 969bab60caa491f515a0f7a69fe1ee7165815f0e
     #########################################
     ############ SPRITE RESIZING ############
     #########################################
@@ -913,6 +989,7 @@ def main():
     print(blockData)
 
     while not gameExit:
+<<<<<<< HEAD
         while gameState == "credits":
             # creating the surface
             credit = pygame.Surface((scrW, scrH))
@@ -1000,11 +1077,64 @@ def main():
 
                 elif event.key == K_s:
                     inputSet[1] = 0
+=======
+        while gameState == "menu" and not gameExit:
+            t.tick() # Ticks the clock. As of version 0.0.wheneverTazwelBitchedAtMeToPutMoreCommentsInMyCode, this is only used for displaying FPS.
+            
+            mousePos = pygame.mouse.get_pos() # Gets mouse position.
+            
+            #Event handler, gets & handles input.
+            for event in pygame.event.get():
+                if event.type == KEYDOWN:
+                    
+                    # This sets corresponding directional keys in 'inputSet' to 1 if they're being pushed.
+                    if event.key == K_ESCAPE:
+                        gameExit = True
 
-                elif event.key == K_e:
-                    if dispInventory:
-                        dispInventory = False
+                elif event.type == MOUSEBUTTONDOWN:
+                    
+                    # This sets corresponding mouse buttons in 'inputSet' to 1 if they're being pushed.
+                    if event.button == 1: # Left click detection
+                        clickPos = mousePos
+                        
+                elif event.type == MOUSEBUTTONUP:
+                    # This sets corresponding mouse buttons in 'inputSet' to 0 if they're not being pushed.
+                    if event.button == 1: # Left click detection
+                        
+                        for button in mainMenuButtons:
+                            if inButton(mainMenuButtons[button], mousePos) and inButton(mainMenuButtons[button], clickPos):
+                                if button.lower() == "play":
+                                    gameState = "game"
+                                    break
+                                
+                                elif button.lower() == "credits":
+                                    pass
+                                
+                                elif button.lower() == "quit":
+                                    gameExit = True
+                                    break
+                        
+                        clickPos = None
+>>>>>>> 969bab60caa491f515a0f7a69fe1ee7165815f0e
+
+            if time.time() - lastFrameTime < 0.006:
+                window.blit(mainMenuSprite, [0, 0])
+                
+                for button in mainMenuButtons:
+                    if inButton(mainMenuButtons[button], mousePos):
+                        if clickPos == None:
+                            window.fill([0, 128, 255], pygame.Rect([0, mainMenuButtons[button]["pos"][1] + scrW / 120], [mainMenuButtons[button]["pos"][0] + mainMenuButtons[button]["dims"][0], mainMenuButtons[button]["dims"][1] - scrW / 60]))
+                            window.blit(mainMenuButtons[button]["hover"], mainMenuButtons[button]["pos"])
+                            
+                        elif inButton(mainMenuButtons[button], clickPos):
+                            window.fill([0, 128, 255], pygame.Rect([0, mainMenuButtons[button]["pos"][1] + scrW / 120], [mainMenuButtons[button]["pos"][0] + mainMenuButtons[button]["dims"][0], mainMenuButtons[button]["dims"][1] - scrW / 60]))
+                            window.blit(mainMenuButtons[button]["hold"], mainMenuButtons[button]["pos"])
+                            
+                        else:
+                            window.blit(mainMenuButtons[button]["normal"], mainMenuButtons[button]["pos"])
+                            
                     else:
+<<<<<<< HEAD
                         dispInventory = True
 
             elif event.type == MOUSEBUTTONDOWN:
@@ -1460,6 +1590,518 @@ def main():
             lastFrameTime = time.time()
 
             pygame.display.flip()
+=======
+                        window.blit(mainMenuButtons[button]["normal"], mainMenuButtons[button]["pos"])
+                
+                pygame.display.flip()
+                
+                lastFrameTime = time.time()
+                        
+        while gameState == "game" and not gameExit:
+            t.tick() # Ticks the clock. As of version 0.0.wheneverTazwelBitchedAtMeToPutMoreCommentsInMyCode, this is only used for displaying FPS.
+            
+            mousePos = pygame.mouse.get_pos() # Gets mouse position.
+            
+            #Event handler, gets & handles input.
+            for event in pygame.event.get():
+                if event.type == KEYDOWN:
+                    
+                    # This sets corresponding directional keys in 'inputSet' to 1 if they're being pushed.
+                    if event.key == K_ESCAPE:
+                        gameState = "menu"
+                        
+                    elif event.key == K_d:
+                        inputSet[3] = 1
+                        
+                    elif event.key == K_a:
+                        inputSet[2] = 1
+                        
+                    elif event.key == K_w:
+                        inputSet[0] = 1
+                        
+                    elif event.key == K_s:
+                        inputSet[1] = 1
+                    
+                    #Debug tools, they zoom the camera out or in:
+                    elif event.key == K_r:
+                        cameraZoom = 60.5
+                        
+                    elif event.key == K_f:
+                        cameraZoom = 16
+
+                    elif event.key == K_t:
+                        cutscene(cameraPos, [16.0, 16.0], cameraZoom, 16, 2, 1)
+                        
+                elif event.type == KEYUP:
+                    
+                    # This sets corresponding directional keys in 'inputSet' to 0 if they're not being pushed.
+                    if event.key == K_d:
+                        inputSet[3] = 0
+                        
+                    elif event.key == K_a:
+                        inputSet[2] = 0
+                        
+                    elif event.key == K_w:
+                        inputSet[0] = 0
+                        
+                    elif event.key == K_s:
+                        inputSet[1] = 0
+
+                    elif event.key == K_e:
+                        if dispInventory:
+                            dispInventory = False
+                        else:
+                            dispInventory = True
+                        
+                elif event.type == MOUSEBUTTONDOWN:
+                    
+                    # This sets corresponding mouse buttons in 'inputSet' to 1 if they're being pushed.
+                    if event.button == 1: # Left click detection
+                        inputSet[4] = 1
+                        
+                    elif event.button == 3: # Right click detection
+                        inputSet[5] = 1
+
+                    elif event.button == 4:
+                        if targetScroll > 0 and dispInventory:
+                            targetScroll -= 1
+                    
+                    elif event.button == 5:
+                        if targetScroll < len(playerInventory) - 1 and dispInventory:
+                            targetScroll += 1
+
+                elif event.type == MOUSEBUTTONUP:
+                    # This sets corresponding mouse buttons in 'inputSet' to 0 if they're not being pushed.
+                    if event.button == 1: # Left click detection
+                        inputSet[4] = 0
+                        
+                    elif event.button == 3: # Right click detection
+                        inputSet[5] = 0
+            
+            
+            # Checks if the mouse is being clicked, and makes the player start shooting if it is.
+            if inputSet[4] == 1:
+                if dispInventory:
+                    pass
+                    # Do a bunch of stuff to talk to the server
+
+                else:
+                    players[0]["isShooting"] = True
+                    
+                    if players[0]["energy"] > 1:
+                        if time.time() - laserSoundTime > 0.5:
+                            sounds[0].play()
+                            laserSoundTime = time.time()
+                        
+                        if laserHold == False:
+                            sounds[1].play()
+                            laserHold = True
+                        players[0]["isShooting"] = True
+                        
+                    else:
+                        if laserHold:
+                            sounds[2].play()
+                            laserSoundTime = time.time()
+                            laserHold = False
+                            
+                        elif time.time() - laserSoundTime > 2:
+                            sounds[2].play()
+                            laserSoundTime = time.time()
+                            
+                
+            else:
+                players[0]["isShooting"] = False
+                if laserHold:
+                    sounds[0].fadeout(250)
+                    laserHold = False
+                
+                elif not laserHold and players[0]["energy"] < 1:
+                    sounds[2].stop()
+            
+            
+            
+            # Based on what keys are being pressed (WSAD, or the first four values in inputSet, respectively),
+            # this changes playerDelta.
+            if (inputSet[0] != inputSet[1]) and (inputSet[2] != inputSet[3]): # This checks if up OR down, and left OR right are being pressed, to see if the player should be moved diagonally.
+                if inputSet[0] == 1: # This checks if up is being pressed.
+                    
+                    if inputSet[2] == 1: # This checks if left is being pressed
+                        playerDelta = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1)] # Move the player diagonally up and left.
+                        
+                    else: # Because we already know that left is NOT being pressed at this point, and that up IS being pressed, we already know to move the player up and right.
+                        playerDelta = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1)] # Move the player diagonally up and right.
+                        
+                else: #If down is NOT being pressed:
+                    
+                    if inputSet[2] == 1: # Check if right is being pressed
+                        playerDelta = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2)] # Move the player diagonally down and left.
+                        
+                    else: # The only possible other option is down and left being pressed.
+                        playerDelta = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2)] # Move the player diagonally down and right.
+                        
+            else: # If the player is NOT pressing diagonally:
+                
+                if inputSet[0] == 1 or inputSet[1] == 1: # Check if the player is pressing up or down
+                    
+                    if inputSet[0] == inputSet[1]: # If the player is pressing up AND down, the inputs cancel out and the player does not move.
+                        playerDelta[1] = 0 # Don't move the player vertically.
+                        
+                    elif inputSet[0] == 1: # Check if the player is ONLY pressing up
+                        playerDelta[1] =  -(t.get_time() * playerSpeed) # Move the player vertically up. This is negative because of the grid system being dumb.
+                        
+                    else: # If up OR down are being pressed, and down is NOT being pressed, we know to move the player vertically down
+                        playerDelta[1] = (t.get_time() * playerSpeed) # Move the player vertically down. This is positive because of the grid system being dumb.
+                        
+                else: # If neither up nor down are being pressed, don't move the player vertically.
+                    playerDelta[1] = 0 # Don't move the player vertically.
+                    
+                if inputSet[2] == 1 or inputSet[3] == 1: # Check if the player is pressing left or right
+                    
+                    if inputSet[2] == inputSet[3]: # If the player is pressing left AND right, the inputs cancel out and the player does not move.
+                        playerDelta[0] = 0 # Don't move the player horizontally.
+                        
+                    elif inputSet[2] == 1: # Check if the player is ONLY pressing left
+                        playerDelta[0] =  -(t.get_time() * playerSpeed) # Move the player horizontally left.
+                        
+                    else: # If left OR right are being pressed, and left is NOT being pressed, we know to move the player horizontally right.
+                        playerDelta[0] = (t.get_time() * playerSpeed) # Move the player horizontally right.
+                        
+                else: # If neither left NOR right are being pressed, don't move the player vertically.
+                    playerDelta[0] = 0 # Don't move the player horizontally.
+                     
+            
+            # Makes sure the player does not go outside the world by checking if incrementing the player's position by
+            # playerDelta would put it outside of the world.
+            # Rather than just setting playerDelta to 0, it makes it so the player *perfectly* squishes up against the side of the world,
+            # so we can maintain delicious pixel-perfectness
+            if playerDelta[0] + players[0]["pos"][0] < 0.5: # Check if the player will go outside the right edge
+                playerDelta[0] = -(players[0]["pos"][0] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+                
+            elif playerDelta[0] + players[0]["pos"][0] > worldSize[0] - 0.5: # Check if the player will go outside the left edge
+                playerDelta[0] = (worldSize[0] - 0.5) - players[0]["pos"][0] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+            
+            if playerDelta[1] + players[0]["pos"][1] > worldSize[1] - 0.5: # Check if the player will go outside the bottom edge
+                playerDelta[1] = (worldSize[1] - 0.5) - players[0]["pos"][1] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+                
+            elif playerDelta[1] + players[0]["pos"][1] < 0.5: # Check if the player will go outside the top edge
+                playerDelta[1] = -(players[0]["pos"][1] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+            
+            ### COLLISIONS ###
+            
+            preArcPos = [0, 0]
+            
+            nextPlayerPos = [players[0]["pos"][0] + playerDelta[0], players[0]["pos"][1] + playerDelta[1]]
+            
+            pointPos = [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]
+            
+            collideRange = [[int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]]
+            
+            magnitude = math.sqrt(math.pow(playerDelta[0], 2) + math.pow(playerDelta[1], 2))
+            
+            
+            for block in enumerate(collideRange):
+                if block[1][0] < 0 or block[1][0] >= worldSize[0]:
+                    collideRange[block[0]] = "EOW"
+                    
+                if block[1][1] < 0 or block[1][1] >= worldSize[1]:
+                    collideRange[block[0]] = "EOW"
+            
+            
+            for block in collideRange:
+                if block == "EOW":
+                    continue
+
+                if blockData[world[block[0]][block[1]]["type"]]["collidable"]:
+                    
+                    if math.sqrt(math.pow(nextPlayerPos[0] - pointPos[0], 2) + math.pow(nextPlayerPos[1] - pointPos[1], 2)) < 0.45:
+                        
+                        if (nextPlayerPos[0] - pointPos[0]) != 0:
+                            if block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]:
+                                collideAngle = math.atan(((nextPlayerPos[1] - pointPos[1])) / ((nextPlayerPos[0] - pointPos[0])))
+                                
+                                playerDelta = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
+                                
+                            elif block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)]:
+                                collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / ((nextPlayerPos[0] - pointPos[0])))
+                                
+                                playerDelta = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
+
+                            elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)]:
+                                collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0]))
+                                
+                                playerDelta = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
+                            
+                            elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]:
+                                collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0]))
+                                
+                                playerDelta = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
+                        
+                    
+                    
+                    if players[0]["pos"][0] >= block[0] - 0.05 and players[0]["pos"][0] <= block[0] + 1.05:
+                        if block[1] - players[0]["pos"][1] <= 0:
+                            playerDelta[1] = block[1] - (players[0]["pos"][1] + 0.5) + 2
+                            
+                        else:
+                            playerDelta[1] = block[1] - (players[0]["pos"][1] + 0.5)
+                    
+                    
+                    
+                    if players[0]["pos"][1] >= block[1] - 0.05 and players[0]["pos"][1] <= block[1] + 1.05:
+                        if block[0] - players[0]["pos"][0] <= 0:
+                            playerDelta[0] = block[0] - (players[0]["pos"][0] + 0.5) + 2
+                            
+                        else:
+                            playerDelta[0] = block[0] - (players[0]["pos"][0] + 0.5)
+                    
+                        
+                      
+            # Changes player position by playerDelta
+            players[0]["pos"] = [players[0]["pos"][0] + playerDelta[0], players[0]["pos"][1] + playerDelta[1]]
+            
+            
+            # Changes camera position, with smoothness.
+            # Also allows the player to look around with the mouse.
+            cameraPos = [cameraPos[0] + ((((mousePos[0] - (scrW / 2)) / (scrW / cameraZoom)) / 200) + (players[0]["pos"][0] - cameraPos[0]) / 50) * (t.get_time() * 0.5), cameraPos[1] + ((((mousePos[1] - (scrH / 2)) / (scrW / cameraZoom)) / 200) + (players[0]["pos"][1] - cameraPos[1]) / 50) * (t.get_time() * 0.5)] 
+            
+            
+            # This the important thing.
+            # It renders the section of the world that's visible to the camera.
+            # It only does so when ~1/120th of a second has passed.
+            if time.time() - lastFrameTime > 0.006:
+                
+                
+                #This makes it so the camera does not go outside the world when it isn't zoomed out very far
+                if cameraZoom <= worldSize[0]: # Check if the number of blocks that can fit in the width of the screen is less than the width of the world
+                    
+                    if cameraPos[0] - (cameraZoom / 2) < 0: # Check if the camera is outside the left edge of the world
+                        cameraPos[0] = cameraZoom / 2 # Move the camera back into the world if the above is true.
+                        
+                    elif cameraPos[0] + (cameraZoom / 2) > worldSize[0]: # Check if the camera is outside the right edge of the world
+                        cameraPos[0] = worldSize[0] - (cameraZoom / 2) # Move the camera back into the world if the above is true.
+                    
+                    if cameraPos[1] < (cameraZoom * (scrH / scrW)) / 2: # Check if the camera is outside the top edge of the world
+                        cameraPos[1] = (cameraZoom * (scrH / scrW)) / 2 # Move the camera back into the world if the above is true.
+                        
+                    elif cameraPos[1] > worldSize[1] - (cameraZoom * (scrH / scrW)) / 2: # Check if the camera is outside the bottom edge of the world
+                        cameraPos[1] = worldSize[1] - (cameraZoom * (scrH / scrW)) / 2 # Move the camera back into the world if the above is true.
+                        
+                else: # If the camera DOES exceed the world size, meaning restricting it to the world is impossible:
+                    window.fill([255, 255, 255]) # Fill the screen with white (or whatever we decide to make the color of air in the future), so there aren't weird graphical artifacts.
+                
+                
+                
+                # Determines if sprites should be resized.
+                if cameraZoom != previousZoom: # Checks if the camera zoom is different
+                
+                    playerLaserDist = int((3 * scrW) / (8 * cameraZoom)) # Scales the distance from the player's laser to the player
+                    
+                    if cameraZoom == 16: # This is for maintaining pixel-perfectness for when the camera is at default zoom.
+                        
+                        healthSprite = pygame.Surface([scrW / cameraZoom, scrW / cameraZoom]).convert_alpha()
+                        
+                        healthSprite.fill([0, 0, 0, 64])
+                        
+                        # Loops through the block sprites and resizes them to a perfect whole-number side-length for 1920x1080
+                        for block in range(len(blockSprites)):
+                            for state in range(len(blockSprites[block])):
+                                for rotation in range(len(blockSprites[block][state])):
+                                    blockSprites[block][state][rotation] = blockData[block]["sprites"][state][rotation].copy()
+                        # Note that if this were written in any other programming language on Earth, this would be a
+                        # huge and disgusting memory leak, because the previous sprites aren't actually deleted.
+                        
+                    else: # If the camera is no longer in the default zoom, (for quick camera pans and zoom-outs), don't bother with integer division
+                        
+                        #Same thing as the other loop, it just doesn't bother with integer division and rounds up to the nearest pixel.
+                        
+                        healthSprite = pygame.Surface([int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1]).convert_alpha()
+                        
+                        healthSprite.fill([0, 0, 0, 64])
+                        
+                        for block in range(len(blockSprites)):
+                            for state in range(len(blockSprites[block])):
+                                for rotation in range(len(blockSprites[block][state])):
+                                    blockSprites[block][state][rotation] = pygame.transform.scale(blockData[block]["sprites"][state][rotation].copy(), [int(scrW / cameraZoom) + 1, int(scrW / cameraZoom) + 1])
+                
+                
+                
+                #///CAUTION///CAUTION///CAUTION///CAUTION
+                previousZoom = cameraZoom# DO NOT TOUCH
+                #///CAUTION///CAUTION///CAUTION///CAUTION
+                
+                
+                for column in range(int(cameraPos[0] - (cameraZoom / 2)) - 1, int(cameraPos[0] + (cameraZoom / 2)) + 1): # Scans accross the world area of the world visible to the camera in columns
+                    if column < 0 or column > worldSize[0] - 1: # If the column is outside of the world, continue, because that would crash the program.
+                        continue
+                    else:
+                        for row in range(int(cameraPos[1] - ((cameraZoom * (scrH / scrW)) // 2)) - 1, int(cameraPos[1] + ((cameraZoom * (scrH / scrW)) // 2)) + 2): # Scans accross the world area of the world visible to the camera in rows
+                            if row < 0 or row >= worldSize[1]: # If the row is outside of the world, continue, because that would crash the program.
+                                continue
+                            
+                            else:
+                             # Blit the corresponding sprite to the block type in the column and row in the relative position of the block on the screen.
+                                window.blit(blockSprites[world[column][row]["type"]][world[column][row]["state"]][world[column][row]["rotation"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)])
+                                
+                                
+                                if world[column][row]["type"] != 0 and world[column][row]["health"] / blockData[world[column][row]["type"]]["health"] != 1:
+                                    healthSprite.fill([0, 0, 0, 64])
+                                    
+                                    healthSprite.fill([0, 0, 0, 0], pygame.Rect([(healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / blockData[world[column][row]["type"]]["health"]), (healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / blockData[world[column][row]["type"]]["health"])], [healthSprite.get_width() * (world[column][row]["health"] / blockData[world[column][row]["type"]]["health"]), healthSprite.get_width() * (world[column][row]["health"] / blockData[world[column][row]["type"]]["health"])]))
+                                    
+                                    window.blit(healthSprite, getScreenPos([column, row]))
+                                    
+                             # If the above line, or anything in this loop breaks, make it so I'm the one to fix it.
+                                # I don't want to subject this shitshow to anyone else.
+                                
+                                ########## Uncomment the following line to display block positions (terrible performance): ##########
+                                #window.blit(fpsDisplayFont.render("(" + str(column) + ", " + str(row) + ")", 0, (255, 0, 0)), [(column - cameraPos[0] + (cameraZoom // 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) // 2) * (scrW / cameraZoom) + (scrW / (cameraZoom * 2))])
+                
+                
+                # Displays the player's lasers, if they're firing
+                for player in players:
+                    if player["isShooting"]:
+                        if player["energy"] - (time.time() - lastFrameTime) * 30 > 0:
+                            colorMultiplier = random.randint(-2, 3)
+                            if colorMultiplier > 0:
+                                
+                                pygame.draw.line(window, [(255 - teams[player["team"]]["color"][0]) / 6 * colorMultiplier + teams[player["team"]]["color"][0], (255 - teams[player["team"]]["color"][1]) / 6 * colorMultiplier + teams[player["team"]]["color"][1], (255 - teams[player["team"]]["color"][2]) / 6 * colorMultiplier + teams[player["team"]]["color"][2]], getScreenPos(player["pos"]), getScreenPos(raycast(player["pos"], player["rotation"][0], player["rotation"][1], player["team"])), 4)
+                            
+                            else:
+                                                            
+                                pygame.draw.line(window, [(teams[player["team"]]["color"][0]) / 4 * colorMultiplier + teams[player["team"]]["color"][0], (teams[player["team"]]["color"][1]) / 4 * colorMultiplier + teams[player["team"]]["color"][1], (teams[player["team"]]["color"][2]) / 4 * colorMultiplier + teams[player["team"]]["color"][2]], getScreenPos(player["pos"]), getScreenPos(raycast(player["pos"], player["rotation"][0], player["rotation"][1], player["team"])), 4)
+                            
+                            if player["energy"] - (time.time() - lastFrameTime) * 30 > 0:
+                                player["energy"] = player["energy"] - (time.time() - lastFrameTime) * 30
+                                
+                            else:
+                                player["energy"] = 0
+                                
+                    
+                    if player["energy"] < 100 and player["energy"] + (time.time() - lastFrameTime) * 15 < 100:
+                        player["energy"] += (time.time() - lastFrameTime) * 15
+                        
+                    elif player["energy"] < 100:
+                        player["energy"] = 100
+                        
+                
+                
+                # Displays players.
+
+                spriteWorldPos = getWorldPos(mousePos)
+
+                spriteWorldPos = [int(spriteWorldPos[0]), int(spriteWorldPos[1])]
+
+                denyBlockPlacement = False
+                
+                for player in players:
+                    
+                    relPlayerPos = getScreenPos(player["pos"]) # Gets the relative position of the player on the screen
+
+                    if spriteWorldPos in [[int(player["pos"][0] + 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] + 0.5), int(player["pos"][1] - 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] - 0.5)]]:
+                        denyBlockPlacement = True
+                    
+                    
+                    # This block is what displays players.
+                    if players.index(player) == 0:
+                        # Calculates the player's rotation.
+                        if mousePos[0] - relPlayerPos[0] > 0: # Checks if the mouse is on the right side of the screen
+                            player["rotation"] = [(relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), 1]
+                            
+                        elif mousePos[0] - relPlayerPos[0] < 0: # Checks if the mouse is on the left side of the screen
+                            player["rotation"] = [(relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), -1]
+                        
+                        elif mousePos[1] > relPlayerPos[1]:
+                            player["rotation"] = ["-inf", 0]
+                        
+                        else:
+                            player["rotation"] = ["+inf", 0]
+                    
+                    
+                    # Draws the player's body.
+                    pygame.draw.circle(window, teams[player["team"]]["color"], relPlayerPos, int(scrW / (2 * cameraZoom)), 0)
+                    
+                    # Draws the player's adorable little cicle that shows where they're facing.
+                    # Checks if the player's rotation isn't straight up or down.
+                    if str(type(player["rotation"][0])) == "<class 'float'>" or str(type(player["rotation"][0])) == "<class 'int'>":
+                        pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [int(math.cos(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[0], int(math.sin(math.atan(player["rotation"][0])) * playerLaserDist) * player["rotation"][1] + relPlayerPos[1]], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+                    
+                    # Catches if the player's rotation is straight up.
+                    elif player["rotation"][0] == "+inf":
+                        pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [relPlayerPos[0], relPlayerPos[1] - playerLaserDist], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+                    
+                    # Catches if the player's rotation is straight down.
+                    else:
+                        pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [relPlayerPos[0], relPlayerPos[1] + playerLaserDist], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
+                    
+                    
+                    # If debug tools are enabled, this displays player information.
+                    if displayPlayerInfo:
+                        for attribute in enumerate(player):
+                            window.blit(fpsDisplayFont.render(str(attribute[1]) + ": " + str(player[attribute[1]]), 0, (255, 0, 0)), [relPlayerPos[0] + scrW / 32, relPlayerPos[1] + attribute[0] * 30])
+                
+                ### EVERYTHING PAST THIS POINT IS UI ###
+                
+
+                if dispInventory:
+                    
+                    if denyBlockPlacement:
+                        window.blit(blockSelectionSprites[1], getScreenPos(spriteWorldPos))
+
+                    else:
+                        window.blit(blockSelectionSprites[0], getScreenPos(spriteWorldPos))
+                    
+                    window.blit(inventoryDarkArea, [(scrW * 15 / 16) - 8, 0])
+                    
+                    if abs(inventoryScroll - ((scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth))) < 20:
+                        inventoryScroll = (scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth)
+                    else:
+                        inventoryScroll = int(((scrH / 2 + (scrW / 32)) - (targetScroll * defaultBlockWidth) - inventoryScroll) * (time.time() - lastFrameTime) * 25) + inventoryScroll
+                        
+                        
+                    window.blit(inventorySprite, [(15 / 16) * scrW, inventoryScroll])
+                    
+                    
+                    for i in range(len(playerInventory)):
+                        window.blit(inventorySmallText.render(str(playerInventory[i][1]), 0, (0, 255, 0)), [(15 / 16) * scrW + 8, inventoryScroll + (i * defaultBlockWidth)])
+                    
+                    window.blit(inventorySelection, [(15 / 16) * scrW, scrH / 2 + (scrW / 32)])
+                    
+                    currentName = inventorySmallText.render(str(" " + blockData[targetScroll]["name"] + " "), 0, (0, 255, 0), (0, 0, 0))
+                    
+                    
+                    window.blit(currentName, [(scrW * 15 / 16) - currentName.get_width() - 8, scrH / 2 + scrW / 32 + 30])
+                        
+                
+                # Draws health and energy bar borders.
+                pygame.draw.rect(window, [32, 255, 64], pygame.Rect(healthBarPos, statusBarDims), 2)
+                
+                pygame.draw.rect(window, [64, 128, 255], pygame.Rect(energyBarPos, statusBarDims), 2)
+
+                
+                # Draws health and energy bar interiors.
+                window.fill([32, 255, 64], pygame.Rect(healthBarPos, [statusBarDims[0] * (players[0]["health"] / 100), statusBarDims[1]]))
+                
+                window.fill([64, 128, 255], pygame.Rect(energyBarPos, [statusBarDims[0] * (players[0]["energy"] / 100), statusBarDims[1]]))
+                
+                
+                # Draws text over health and energy bars.
+                window.blit(monoFont.render("HEALTH", 0, (32, 128, 16)), healthBarPos)
+                
+                window.blit(monoFont.render("ENERGY", 0, (16, 64, 128)), energyBarPos)
+                   
+                   
+                # Framerate counter. Delete these at will.
+                # (but if you're going to, get rid of 'fpsDisplayFont')
+                window.blit(fpsDisplayFont.render("fps: " + str(fpsCounter.get_fps()), 0, (255, 0, 0)), [0, 0])
+                
+                fpsCounter.tick()
+            
+            
+                #Updates the screen
+                lastFrameTime = time.time()
+                
+                pygame.display.flip()
+>>>>>>> 969bab60caa491f515a0f7a69fe1ee7165815f0e
 
     pygame.quit()
 
