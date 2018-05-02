@@ -764,10 +764,14 @@ def main():
     # 0 - Laser
     # 1 - Laser start
     # 2 - Laser out of energy
+    # 3 - Button blip
+    # 4 - Button press
 
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "laser.ogg")))
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "startLaser.ogg")))
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "outOfEnergy.ogg")))
+    sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "select.ogg")))
+    sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "pageChange.ogg")))
     
     laserSoundTime = 0
     
@@ -999,6 +1003,7 @@ def main():
                         
                         for button in mainMenuButtons:
                             if inButton(mainMenuButtons[button], mousePos) and inButton(mainMenuButtons[button], clickPos):
+                                sounds[3].play()
                                 if button.lower() == "play":
                                     gameState = "game"
                                     break
