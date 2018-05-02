@@ -504,7 +504,7 @@ def createMenuButtons():
     
     for button in enumerate(menuButtons):
         
-        menuButtons[button[1]]["pos"] = [scrW / 16, scrH / 5 * button[0] + scrH / 5]
+        menuButtons[button[1]]["pos"] = [scrW / 16, (scrW / 8) * button[0] + 2 * scrW / 16 + scrH / 180]
         menuButtons[button[1]]["dims"] = [scrW / 5, scrH / 10]
         
         menuButtons[button[1]]["normal"] = pygame.Surface(menuButtons[button[1]]["dims"]).convert_alpha()
@@ -785,11 +785,11 @@ def main():
         
     mainMenuButtons = createMenuButtons()
     
-    mainMenuFont = pygame.font.Font(os.path.join("data", "fonts", "audiowide.ttf"), int(defaultBlockWidth))
+    mainMenuFont = pygame.font.Font(os.path.join("data", "fonts", "audiowide.ttf"), int(defaultBlockWidth * 1.5))
     
-    mainMenuText = mainMenuFont.render("BASE RACE", 0, [0, 0, 0])
+    mainMenuText = mainMenuFont.render("BASE RACE", 1, [0, 0, 0])
     
-    mainMenuSprite.blit(mainMenuText, [scrW / 2 - mainMenuSprite.get_width() / 2, -30])
+    mainMenuSprite.blit(mainMenuText, [scrW / 2 - mainMenuSprite.get_width() / 2 + defaultBlockWidth / 2.5, 0])
     
     # there is literally no point to this the game is fullscreen.
     pygame.display.set_caption("BaseRace")
@@ -1012,7 +1012,7 @@ def main():
                         
                         clickPos = None
 
-            if time.time() - lastFrameTime < 0.008:
+            if time.time() - lastFrameTime < 0.016:
                 window.blit(mainMenuSprite, [0, 0])
                 
                 for button in mainMenuButtons:
