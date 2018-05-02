@@ -972,6 +972,8 @@ def main():
     fpsCounter = pygame.time.Clock()
 
     print(blockData)
+
+    buttonHover = False
     
     while not gameExit:
         while gameState == "credits" and not gameExit:
@@ -1017,12 +1019,30 @@ def main():
                         
                         clickPos = None
 
+            if not buttonHover:
+                for button in mainMenuButtons:
+                    if inButton(mainMenuButtons[button], mousePos):
+                        if clickPos == None:
+                            sounds[4].play()
+                            buttonHover = True
+                            break
+
+            else:
+                buttonHoverFlag = False
+                for button in mainMenuButtons:
+                    if inButton(mainMenuButtons[button], mousePos):
+                        buttonHoverFlag = True
+                        break
+
+                if not buttonHoverFlag:
+                    buttonHover = False
+
             if time.time() - lastFrameTime < 0.016:
                 window.blit(mainMenuSprite, [0, 0])
                 
                 for button in mainMenuButtons:
                     if inButton(mainMenuButtons[button], mousePos):
-                        if clickPos == None:
+                        if clickPos == None:              
                             window.fill([0, 128, 255], pygame.Rect([0, mainMenuButtons[button]["pos"][1] + scrW / 120], [mainMenuButtons[button]["pos"][0] + mainMenuButtons[button]["dims"][0], mainMenuButtons[button]["dims"][1] - scrW / 60]))
                             window.blit(mainMenuButtons[button]["hover"], mainMenuButtons[button]["pos"])
                             
