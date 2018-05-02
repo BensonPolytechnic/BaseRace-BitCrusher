@@ -773,6 +773,9 @@ def main():
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "select.ogg")))
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "pageChange.ogg")))
 
+    sounds[3].set_volume(0.25)
+    sounds[4].set_volume(0.5)
+
     laserSoundTime = 0
 
     laserHold = False
