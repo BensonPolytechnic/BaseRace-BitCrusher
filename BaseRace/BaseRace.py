@@ -1,7 +1,7 @@
 # *** GRAPHICS ENGINE ***
 # This is a thing that makes pixels on a screen turn pretty colors
 
-import pygame, os, time, math, importlib.util, random
+import pygame, os, time, math, importlib.util, random, ctypes
 from pygame.locals import *
 
 spriteImportFunc = importlib.util.spec_from_file_location("blocksprites.py", os.path.join("data", "blocks", "blocksprites.py"))
@@ -634,7 +634,8 @@ def main():
 
         # Sets the display mode.
         window = pygame.display.set_mode((scrW, scrH), FULLSCREEN | HWSURFACE | DOUBLEBUF)
-
+        
+        pygame.event.get()
 
         # Imports block data and resizes sprites.
         if scrW % 16 == 0:
@@ -740,7 +741,8 @@ def main():
 
         # Sets the display mode.
         window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
-
+        
+        pygame.event.get()
 
         # Imports block data and resizes sprites.
         if scrW % 16 == 0:
@@ -753,11 +755,16 @@ def main():
             blockData = importBlockData(scrW / 16 + 1)
             defaultBlockWidth = scrW / 16 + 1
             print("fuck you and your disgusting screen resolution")
-
+    
+    ctypes.windll.user32.mouse_event(2, 0, 0, 0,0) # left down
+    ctypes.windll.user32.mouse_event(4, 0, 0, 0,0) # left up
+    
     #########################################
     ############# SOUND IMPORTS #############
     #########################################
-
+    
+    ### SOUND EFFECTS
+    
     sounds = []
 
     # Sound indexes:
@@ -772,13 +779,24 @@ def main():
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "outOfEnergy.ogg")))
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "select.ogg")))
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "pageChange.ogg")))
-
+    
     sounds[3].set_volume(0.25)
     sounds[4].set_volume(0.5)
 
     laserSoundTime = 0
 
     laserHold = False
+    
+    ### MUSIC
+    
+    #Indexes:
+    # 0 - Main menu music
+    
+    music = []
+    
+    pygame.mixer.music.load(os.path.join("data", "sounds", "mainMenu.ogg"))
+    
+    pygame.mixer.music.set_volume(0.25)
 
     #########################################
     ############## UI CREATION ##############
@@ -796,9 +814,29 @@ def main():
 
     creditFont = pygame.font.Font(os.path.join("data", "fonts", "audiowide.ttf"), int(defaultBlockWidth * 0.75))
 
-    mainMenuText = mainMenuFont.render("BASE RACE", 1, [0, 0, 0])
+    mainMenuText = mainMenuFont.render("BASE RACE", 2, [0, 0, 0])
 
     mainMenuSprite.blit(mainMenuText, [scrW / 2 - mainMenuSprite.get_width() / 2 + defaultBlockWidth / 2.5, 0])
+    
+    credit = pygame.Surface((scrW, scrH))
+
+    for x in range(16):
+        for y in range(int(16 * scrH / scrW) + 1):
+            credit.blit(blockData[0]["sprites"][0][0], (x * defaultBlockWidth, y * defaultBlockWidth))
+
+    text = [creditFont.render("     Walker Green  Programmer", 2, (0,0,0)),
+            creditFont.render("  Vincent Vaughn  Programmer", 2, (0,0,0)),
+            creditFont.render("     Alex Elliott  EAtER oF SoULS", 2, (100,0,0)),
+            creditFont.render("Tazwell Borquist  Programmer", 2, (0,0,0))]
+
+    leftbound = defaultBlockWidth
+    topbound = defaultBlockWidth - 10
+    credit.blit(text[0], (leftbound + 15 + defaultBlockWidth * 2, topbound))
+    credit.blit(text[1], (leftbound - defaultBlockWidth, int(defaultBlockWidth * 1.75 + topbound)))
+    credit.blit(text[2], (leftbound + 160, int(defaultBlockWidth * 3.5 + topbound)))
+    credit.blit(text[3], (leftbound - defaultBlockWidth / 2, int(defaultBlockWidth * 5.25   + topbound)))
+    
+    
 
     # there is literally no point to this the game is fullscreen.
     pygame.display.set_caption("BaseRace")
@@ -885,6 +923,8 @@ def main():
     blockSelectionSprites[1].fill([0, 0, 0, 0], pygame.Rect([inventorySelection.get_height() / 20, inventorySelection.get_height() / 20], [inventorySelection.get_height() * 9 / 10, inventorySelection.get_height() * 9 / 10]))
 
     clickPos = None
+    
+    buttonHover = False
 
     # Position of the camera
     global cameraPos
@@ -977,130 +1017,115 @@ def main():
     fpsCounter = pygame.time.Clock()
 
     print(blockData)
-
-    buttonHover = False
+    
+    pygame.mixer.music.play(-1)
 
     while not gameExit:
-        while gameState == "credits" and not gameExit:
-            # creating the surface
-            credit = pygame.Surface((scrW, scrH))
-
-            for x in range(16):
-                for y in range(int(16 * scrH / scrW) + 1):
-                    credit.blit(blockData[0]["sprites"][0][0], (x * defaultBlockWidth, y * defaultBlockWidth))
-
-            text = [creditFont.render("     Walker Green  Programmer", 0, (0,0,0)),
-                    creditFont.render("  Vincent Vaughn  Programmer", 0, (0,0,0)),
-                    creditFont.render("     Alex Elliott  EAtER oF SoULS", 0, (100,0,0)),
-                    creditFont.render("Tazwell Borquist  Programmer", 0, (0,0,0))]
-
-            leftbound = defaultBlockWidth
-            topbound = defaultBlockWidth - 10
-            credit.blit(text[0], (leftbound + 15 + defaultBlockWidth * 2, topbound))
-            credit.blit(text[1], (leftbound - defaultBlockWidth, int(defaultBlockWidth * 1.75 + topbound)))
-            credit.blit(text[2], (leftbound + 160, int(defaultBlockWidth * 3.5 + topbound)))
-            credit.blit(text[3], (leftbound - defaultBlockWidth / 2, int(defaultBlockWidth * 5.25   + topbound)))
-
-            creditOpen = True
-
-            while creditOpen:
+        if gameState == "credits":
+            pygame.mixer.music.unpause()
+            while gameState == "credits" and not gameExit:
+                
                 for i in pygame.event.get():
-
                     if i.type == pygame.QUIT:
                         gameExit = True
-                        creditOpen = False
 
                     if i.type == pygame.KEYDOWN:
                         gameState = "menu"
-                        lastFrameTime = time.time()
-                        creditOpen = False
-
+                
+                if time.time() - lastFrameTime > 0.016:
                 # drawing the surface onto the screen
-                window.blit(credit, (0,0))
-                pygame.display.flip()
+                    window.blit(credit, (0,0))
+                    pygame.display.flip()
+                    lastFrameTime = time.time()
+            pygame.mixer.music.pause()
+        
+        if gameState == "menu":
+            pygame.mixer.music.unpause()
+        
+            while gameState == "menu" and not gameExit:
+                t.tick() # Ticks the clock. As of version 0.0.wheneverTazwelBitchedAtMeToPutMoreCommentsInMyCode, this is only used for displaying FPS.
 
-        while gameState == "menu" and not gameExit:
-            t.tick() # Ticks the clock. As of version 0.0.wheneverTazwelBitchedAtMeToPutMoreCommentsInMyCode, this is only used for displaying FPS.
+                mousePos = pygame.mouse.get_pos() # Gets mouse position.
 
-            mousePos = pygame.mouse.get_pos() # Gets mouse position.
+                #Event handler, gets & handles input.
+                for event in pygame.event.get():
+                    if event.type == KEYDOWN:
 
-            #Event handler, gets & handles input.
-            for event in pygame.event.get():
-                if event.type == KEYDOWN:
+                        # This sets corresponding directional keys in 'inputSet' to 1 if they're being pushed.
+                        if event.key == K_ESCAPE:
+                            gameExit = True
 
-                    # This sets corresponding directional keys in 'inputSet' to 1 if they're being pushed.
-                    if event.key == K_ESCAPE:
-                        gameExit = True
+                    elif event.type == MOUSEBUTTONDOWN:
 
-                elif event.type == MOUSEBUTTONDOWN:
+                        # This sets corresponding mouse buttons in 'inputSet' to 1 if they're being pushed.
+                        if event.button == 1: # Left click detection
+                            clickPos = mousePos
 
-                    # This sets corresponding mouse buttons in 'inputSet' to 1 if they're being pushed.
-                    if event.button == 1: # Left click detection
-                        clickPos = mousePos
+                    elif event.type == MOUSEBUTTONUP:
+                        # This sets corresponding mouse buttons in 'inputSet' to 0 if they're not being pushed.
+                        if event.button == 1: # Left click detection
 
-                elif event.type == MOUSEBUTTONUP:
-                    # This sets corresponding mouse buttons in 'inputSet' to 0 if they're not being pushed.
-                    if event.button == 1: # Left click detection
+                            for button in mainMenuButtons:
+                                if inButton(mainMenuButtons[button], mousePos) and inButton(mainMenuButtons[button], clickPos):
+                                    sounds[3].play()
+                                    if button.lower() == "play":
+                                        gameState = "game"
+                                        break
 
-                        for button in mainMenuButtons:
-                            if inButton(mainMenuButtons[button], mousePos) and inButton(mainMenuButtons[button], clickPos):
-                                sounds[3].play()
-                                if button.lower() == "play":
-                                    gameState = "game"
-                                    break
+                                    elif button.lower() == "credits":
+                                        gameState = "credits"
+                                        break
 
-                                elif button.lower() == "credits":
-                                    gameState = "credits"
-                                    break
+                                    elif button.lower() == "quit":
+                                        gameExit = True
+                                        break
 
-                                elif button.lower() == "quit":
-                                    gameExit = True
-                                    break
-
-                        clickPos = None
+                            clickPos = None
 
 
-            if not buttonHover:
-                for button in mainMenuButtons:
-                    if inButton(mainMenuButtons[button], mousePos):
-                        if clickPos == None:
-                            sounds[4].play()
-                            buttonHover = True
+                if not buttonHover:
+                    for button in mainMenuButtons:
+                        if inButton(mainMenuButtons[button], mousePos):
+                            if clickPos == None:
+                                sounds[4].play()
+                                buttonHover = True
+                                break
+
+                else:
+                    buttonHoverFlag = False
+                    for button in mainMenuButtons:
+                        if inButton(mainMenuButtons[button], mousePos):
+                            buttonHoverFlag = True
                             break
 
-            else:
-                buttonHoverFlag = False
-                for button in mainMenuButtons:
-                    if inButton(mainMenuButtons[button], mousePos):
-                        buttonHoverFlag = True
-                        break
+                    if not buttonHoverFlag:
+                        buttonHover = False
 
-                if not buttonHoverFlag:
-                    buttonHover = False
+                if time.time() - lastFrameTime < 0.016:
 
-            if time.time() - lastFrameTime < 0.016:
+                    window.blit(mainMenuSprite, [0, 0])
 
-                window.blit(mainMenuSprite, [0, 0])
+                    for button in mainMenuButtons:
+                        if inButton(mainMenuButtons[button], mousePos):
+                            if clickPos == None:
+                                window.fill([0, 128, 255], pygame.Rect([0, mainMenuButtons[button]["pos"][1] + scrW / 120], [mainMenuButtons[button]["pos"][0] + mainMenuButtons[button]["dims"][0], mainMenuButtons[button]["dims"][1] - scrW / 60]))
+                                window.blit(mainMenuButtons[button]["hover"], mainMenuButtons[button]["pos"])
 
-                for button in mainMenuButtons:
-                    if inButton(mainMenuButtons[button], mousePos):
-                        if clickPos == None:
-                            window.fill([0, 128, 255], pygame.Rect([0, mainMenuButtons[button]["pos"][1] + scrW / 120], [mainMenuButtons[button]["pos"][0] + mainMenuButtons[button]["dims"][0], mainMenuButtons[button]["dims"][1] - scrW / 60]))
-                            window.blit(mainMenuButtons[button]["hover"], mainMenuButtons[button]["pos"])
+                            elif inButton(mainMenuButtons[button], clickPos):
+                                window.fill([0, 128, 255], pygame.Rect([0, mainMenuButtons[button]["pos"][1] + scrW / 120], [mainMenuButtons[button]["pos"][0] + mainMenuButtons[button]["dims"][0], mainMenuButtons[button]["dims"][1] - scrW / 60]))
+                                window.blit(mainMenuButtons[button]["hold"], mainMenuButtons[button]["pos"])
 
-                        elif inButton(mainMenuButtons[button], clickPos):
-                            window.fill([0, 128, 255], pygame.Rect([0, mainMenuButtons[button]["pos"][1] + scrW / 120], [mainMenuButtons[button]["pos"][0] + mainMenuButtons[button]["dims"][0], mainMenuButtons[button]["dims"][1] - scrW / 60]))
-                            window.blit(mainMenuButtons[button]["hold"], mainMenuButtons[button]["pos"])
+                            else:
+                                window.blit(mainMenuButtons[button]["normal"], mainMenuButtons[button]["pos"])
 
                         else:
                             window.blit(mainMenuButtons[button]["normal"], mainMenuButtons[button]["pos"])
 
-                    else:
-                        window.blit(mainMenuButtons[button]["normal"], mainMenuButtons[button]["pos"])
+                    pygame.display.flip()
 
-                pygame.display.flip()
-
-                lastFrameTime = time.time()
+                    lastFrameTime = time.time()
+            
+            pygame.mixer.music.pause()
 
         while gameState == "game" and not gameExit:
             t.tick() # Ticks the clock. As of version 0.0.wheneverTazwelBitchedAtMeToPutMoreCommentsInMyCode, this is only used for displaying FPS.
