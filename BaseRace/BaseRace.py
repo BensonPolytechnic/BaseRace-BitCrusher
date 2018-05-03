@@ -13,8 +13,6 @@ pygame.init()
 pygame.mixer.init()
 pygame.font.init()
 
-pygame.event.get()
-
 # Takes a position of a point in the world, and returns its position on the screen in pixels.
 def getScreenPos(pos):
     return [int((pos[0] - cameraPos[0] + (cameraZoom / 2)) * ((scrW / cameraZoom))), int((pos[1] - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom))]
