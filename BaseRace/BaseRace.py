@@ -1217,10 +1217,6 @@ def main():
                     players[0]["isShooting"] = True
 
                     if players[0]["energy"] > 1:
-                        if time.time() - laserSoundTime > 0.5:
-                            sounds[0].play()
-                            laserSoundTime = time.time()
-
                         if laserHold == False:
                             sounds[1].play()
                             laserHold = True
@@ -1228,23 +1224,13 @@ def main():
 
                     else:
                         if laserHold:
-                            sounds[2].play()
-                            laserSoundTime = time.time()
                             laserHold = False
-
-                        elif time.time() - laserSoundTime > 2:
-                            sounds[2].play()
-                            laserSoundTime = time.time()
 
 
             else:
-                players[0]["isShooting"] = False
+                players[0]["isShooting"] = False        
                 if laserHold:
-                    sounds[0].fadeout(250)
                     laserHold = False
-
-                elif not laserHold and players[0]["energy"] < 1:
-                    sounds[2].stop()
 
 
 
@@ -1486,8 +1472,19 @@ def main():
 
 
                 # Displays the player's lasers, if they're firing
+                playerCameraDistance = 10.0
+                firingPlayerSound = 0
+                
                 for player in players:
                     if player["isShooting"]:
+                        
+                        if math.sqrt(math.pow(player["pos"][0] - cameraPos[0], 2) + math.pow(player["pos"][1] - cameraPos[1], 2)) < playerCameraDistance:
+                            playerCameraDistance = math.sqrt(math.pow(player["pos"][0] - cameraPos[0], 2) + math.pow(player["pos"][1] - cameraPos[1], 2))
+                            if player["energy"] > 1:
+                                firingPlayerSound = 0
+                            else:
+                                firingPlayerSound = 1
+                            
                         if player["energy"] - (time.time() - lastFrameTime) * 30 > 0:
                             colorMultiplier = random.randint(-2, 3)
                             if colorMultiplier > 0:
@@ -1512,7 +1509,31 @@ def main():
                         player["energy"] = 100
 
 
+                
+                
+                if playerCameraDistance <= 2:
+                    sounds[0].set_volume(1.0)
+                    sounds[2].set_volume(1.0)
+                    
+                elif playerCameraDistance <= 9:
+                    sounds[0].set_volume(1 - (playerCameraDistance / 9))
+                    sounds[2].set_volume(1 - (playerCameraDistance / 9))
+                else:
+                    sounds[0].set_volume(0)
+                    sounds[2].set_volume(0)
+                
+                if firingPlayerSound == 0 and playerCameraDistance <= 9:
+                    if time.time() - laserSoundTime > 2:
+                        sounds[2].stop()
+                        sounds[0].play()
+                        laserSoundTime = time.time()
 
+                elif playerCameraDistance <= 9:
+                    if time.time() - laserSoundTime > 2:
+                        sounds[0].stop()
+                        sounds[2].play()
+                        laserSoundTime = time.time()
+                            
                 # Displays players.
 
                 spriteWorldPos = getWorldPos(mousePos)
@@ -1560,7 +1581,8 @@ def main():
                     # Catches if the player's rotation is straight down.
                     else:
                         pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [relPlayerPos[0], relPlayerPos[1] + playerLaserDist], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
-
+                    
+                    
 
                     # If debug tools are enabled, this displays player information.
                     if displayPlayerInfo:
