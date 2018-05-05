@@ -543,11 +543,21 @@ def main():
         # Input validation.
         if displayPlayerInfo.lower() == "y":
             displayPlayerInfo = True
+            
+            while True:
+                clientPlayerID = input("Player ID of the client (0 and 1 are team blue, 2 and 3 are team orange): ")
+                
+                if clientPlayerID.isdigit():
+                    clientPlayerID = int(clientPlayerID)
+                    
+                    if clientPlayerID >= 0 and clientPlayerID <= 3:
+                        break
 
             break
 
         elif displayPlayerInfo.lower() == "n":
             displayPlayerInfo = False
+            clientPlayerID = 0
 
             break
 
@@ -1225,13 +1235,13 @@ def main():
                     # Do a bunch of stuff to talk to the server
 
                 else:
-                    players[0]["isShooting"] = True
+                    players[clientPlayerID]["isShooting"] = True
 
-                    if players[0]["energy"] > 1:
+                    if players[clientPlayerID]["energy"] > 1:
                         if laserHold == False:
                             sounds[1].play()
                             laserHold = True
-                        players[0]["isShooting"] = True
+                        players[clientPlayerID]["isShooting"] = True
 
                     else:
                         if laserHold:
@@ -1239,7 +1249,7 @@ def main():
 
 
             else:
-                players[0]["isShooting"] = False        
+                players[clientPlayerID]["isShooting"] = False        
                 if laserHold:
                     laserHold = False
 
@@ -1299,23 +1309,23 @@ def main():
             # playerDelta would put it outside of the world.
             # Rather than just setting playerDelta to 0, it makes it so the player *perfectly* squishes up against the side of the world,
             # so we can maintain delicious pixel-perfectness
-            if playerDelta[0] + players[0]["pos"][0] < 0.5: # Check if the player will go outside the right edge
-                playerDelta[0] = -(players[0]["pos"][0] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+            if playerDelta[0] + players[clientPlayerID]["pos"][0] < 0.5: # Check if the player will go outside the right edge
+                playerDelta[0] = -(players[clientPlayerID]["pos"][0] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
 
-            elif playerDelta[0] + players[0]["pos"][0] > worldSize[0] - 0.5: # Check if the player will go outside the left edge
-                playerDelta[0] = (worldSize[0] - 0.5) - players[0]["pos"][0] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+            elif playerDelta[0] + players[clientPlayerID]["pos"][0] > worldSize[0] - 0.5: # Check if the player will go outside the left edge
+                playerDelta[0] = (worldSize[0] - 0.5) - players[clientPlayerID]["pos"][0] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
 
-            if playerDelta[1] + players[0]["pos"][1] > worldSize[1] - 0.5: # Check if the player will go outside the bottom edge
-                playerDelta[1] = (worldSize[1] - 0.5) - players[0]["pos"][1] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+            if playerDelta[1] + players[clientPlayerID]["pos"][1] > worldSize[1] - 0.5: # Check if the player will go outside the bottom edge
+                playerDelta[1] = (worldSize[1] - 0.5) - players[clientPlayerID]["pos"][1] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
 
-            elif playerDelta[1] + players[0]["pos"][1] < 0.5: # Check if the player will go outside the top edge
-                playerDelta[1] = -(players[0]["pos"][1] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+            elif playerDelta[1] + players[clientPlayerID]["pos"][1] < 0.5: # Check if the player will go outside the top edge
+                playerDelta[1] = -(players[clientPlayerID]["pos"][1] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
 
             ### COLLISIONS ###
 
             preArcPos = [0, 0]
 
-            nextPlayerPos = [players[0]["pos"][0] + playerDelta[0], players[0]["pos"][1] + playerDelta[1]]
+            nextPlayerPos = [players[clientPlayerID]["pos"][0] + playerDelta[0], players[clientPlayerID]["pos"][1] + playerDelta[1]]
 
             pointPos = [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]
 
@@ -1363,31 +1373,31 @@ def main():
 
 
 
-                    if players[0]["pos"][0] >= block[0] - 0.05 and players[0]["pos"][0] <= block[0] + 1.05:
-                        if block[1] - players[0]["pos"][1] <= 0:
-                            playerDelta[1] = block[1] - (players[0]["pos"][1] + 0.5) + 2
+                    if players[clientPlayerID]["pos"][0] >= block[0] - 0.05 and players[clientPlayerID]["pos"][0] <= block[0] + 1.05:
+                        if block[1] - players[clientPlayerID]["pos"][1] <= 0:
+                            playerDelta[1] = block[1] - (players[clientPlayerID]["pos"][1] + 0.5) + 2
 
                         else:
-                            playerDelta[1] = block[1] - (players[0]["pos"][1] + 0.5)
+                            playerDelta[1] = block[1] - (players[clientPlayerID]["pos"][1] + 0.5)
 
 
 
-                    if players[0]["pos"][1] >= block[1] - 0.05 and players[0]["pos"][1] <= block[1] + 1.05:
-                        if block[0] - players[0]["pos"][0] <= 0:
-                            playerDelta[0] = block[0] - (players[0]["pos"][0] + 0.5) + 2
+                    if players[clientPlayerID]["pos"][1] >= block[1] - 0.05 and players[clientPlayerID]["pos"][1] <= block[1] + 1.05:
+                        if block[0] - players[clientPlayerID]["pos"][0] <= 0:
+                            playerDelta[0] = block[0] - (players[clientPlayerID]["pos"][0] + 0.5) + 2
 
                         else:
-                            playerDelta[0] = block[0] - (players[0]["pos"][0] + 0.5)
+                            playerDelta[0] = block[0] - (players[clientPlayerID]["pos"][0] + 0.5)
 
 
 
             # Changes player position by playerDelta
-            players[0]["pos"] = [players[0]["pos"][0] + playerDelta[0], players[0]["pos"][1] + playerDelta[1]]
+            players[clientPlayerID]["pos"] = [players[clientPlayerID]["pos"][0] + playerDelta[0], players[clientPlayerID]["pos"][1] + playerDelta[1]]
 
 
             # Changes camera position, with smoothness.
             # Also allows the player to look around with the mouse.
-            cameraPos = [cameraPos[0] + ((((mousePos[0] - (scrW / 2)) / (scrW / cameraZoom)) / 200) + (players[0]["pos"][0] - cameraPos[0]) / 50) * (t.get_time() * 0.5), cameraPos[1] + ((((mousePos[1] - (scrH / 2)) / (scrW / cameraZoom)) / 200) + (players[0]["pos"][1] - cameraPos[1]) / 50) * (t.get_time() * 0.5)]
+            cameraPos = [cameraPos[0] + ((((mousePos[0] - (scrW / 2)) / (scrW / cameraZoom)) / 200) + (players[clientPlayerID]["pos"][0] - cameraPos[0]) / 50) * (t.get_time() * 0.5), cameraPos[1] + ((((mousePos[1] - (scrH / 2)) / (scrW / cameraZoom)) / 200) + (players[clientPlayerID]["pos"][1] - cameraPos[1]) / 50) * (t.get_time() * 0.5)]
 
 
             # This the important thing.
@@ -1475,14 +1485,8 @@ def main():
 
                                     window.blit(healthSprite, getScreenPos([column, row]))
 
-                             # If the above line, or anything in this loop breaks, make it so I'm the one to fix it.
-                                # I don't want to subject this shitshow to anyone else.
 
-                                ########## Uncomment the following line to display block positions (terrible performance): ##########
-                                #window.blit(fpsDisplayFont.render("(" + str(column) + ", " + str(row) + ")", 0, (255, 0, 0)), [(column - cameraPos[0] + (cameraZoom // 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) // 2) * (scrW / cameraZoom) + (scrW / (cameraZoom * 2))])
-
-
-                # Displays the player's lasers, if they're firing
+                # Displays the player's lasers, and plays sounds if they're firing.
                 playerCameraDistance = 10.0
                 firingPlayerSound = 0
                 
@@ -1562,7 +1566,7 @@ def main():
 
 
                     # This block is what displays players.
-                    if players.index(player) == 0:
+                    if players.index(player) == clientPlayerID:
                         # Calculates the player's rotation.
                         if mousePos[0] - relPlayerPos[0] > 0: # Checks if the mouse is on the right side of the screen
                             player["rotation"] = [(relPlayerPos[1] - mousePos[1]) / (relPlayerPos[0] - mousePos[0]), 1]
@@ -1640,9 +1644,9 @@ def main():
 
 
                 # Draws health and energy bar interiors.
-                window.fill([32, 255, 64], pygame.Rect(healthBarPos, [statusBarDims[0] * (players[0]["health"] / 100), statusBarDims[1]]))
+                window.fill([32, 255, 64], pygame.Rect(healthBarPos, [statusBarDims[0] * (players[clientPlayerID]["health"] / 100), statusBarDims[1]]))
 
-                window.fill([64, 128, 255], pygame.Rect(energyBarPos, [statusBarDims[0] * (players[0]["energy"] / 100), statusBarDims[1]]))
+                window.fill([64, 128, 255], pygame.Rect(energyBarPos, [statusBarDims[0] * (players[clientPlayerID]["energy"] / 100), statusBarDims[1]]))
 
 
                 # Draws text over health and energy bars.
