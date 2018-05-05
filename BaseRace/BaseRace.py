@@ -771,17 +771,22 @@ def main():
     # 2 - Laser out of energy
     # 3 - Button blip
     # 4 - Button press
+    # 5 - AAAAAAAAAAAAAAAAAAAAAAAAA
 
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "laser.ogg")))
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "startLaser.ogg")))
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "outOfEnergy.ogg")))
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "select.ogg")))
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "pageChange.ogg")))
+    sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "eaterOfSouls.ogg")))
     
     sounds[3].set_volume(0.25)
     sounds[4].set_volume(0.5)
+    sounds[5].set_volume(0.05)
 
     laserSoundTime = 0
+    
+    creditScreenSoundTime = 0
 
     laserHold = False
     
@@ -824,15 +829,13 @@ def main():
 
     text = [creditFont.render("     Walker Green  Programmer", 2, (0,0,0)),
             creditFont.render("  Vincent Vaughn  Programmer", 2, (0,0,0)),
-            creditFont.render("     Alex Elliott  EAtER oF SoULS", 2, (100,0,0)),
             creditFont.render("Tazwell Borquist  Programmer", 2, (0,0,0))]
 
     leftbound = defaultBlockWidth
     topbound = defaultBlockWidth - 10
     credit.blit(text[0], (leftbound + 15 + defaultBlockWidth * 2, topbound))
     credit.blit(text[1], (leftbound - defaultBlockWidth, int(defaultBlockWidth * 1.75 + topbound)))
-    credit.blit(text[2], (leftbound + 160, int(defaultBlockWidth * 3.5 + topbound)))
-    credit.blit(text[3], (leftbound - defaultBlockWidth / 2, int(defaultBlockWidth * 5.25   + topbound)))
+    credit.blit(text[2], (leftbound - defaultBlockWidth / 2, int(defaultBlockWidth * 5.25   + topbound)))
     
     
 
@@ -1030,12 +1033,20 @@ def main():
                     if i.type == pygame.KEYDOWN:
                         gameState = "menu"
                 
+                if time.time() - creditScreenSoundTime >= 1.5:
+                    sounds[5].play()
+                
                 if time.time() - lastFrameTime > 0.016:
                 # drawing the surface onto the screen
                     window.blit(credit, (0,0))
+                    window.blit(creditFont.render("Alex Elliott  EAtER oF SoULS", 2, (random.randint(0, 255), 0, 0)), (leftbound + 160 + random.randint(-8, 8), int(defaultBlockWidth * 3.5 + topbound) + random.randint(-8, 8)))
                     pygame.display.flip()
                     lastFrameTime = time.time()
+                    
+                    
+                        
             pygame.mixer.music.pause()
+            sounds[5].stop()
         
         if gameState == "menu":
             pygame.mixer.music.unpause()
