@@ -1334,11 +1334,7 @@ def main():
 
             pointPos = [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]
 
-            collideRange = []
-
-            for x in range(4):
-                for y in range(4):
-                    collideRange.append([int(nextPlayerPos[0] + (x - 2) * 0.5), int(nextPlayerPos[1] + (y - 2) * 0.5)])
+            collideRange = [[int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]]
 
             magnitude = math.sqrt(math.pow(playerDelta[0], 2) + math.pow(playerDelta[1], 2))
 
@@ -1401,21 +1397,21 @@ def main():
 
 
 
-                    if players[clientPlayerID]["pos"][0] >= block[0] - 0.05 and players[clientPlayerID]["pos"][0] <= block[0] + 1.05:
-                        if (block[1] - players[clientPlayerID]["pos"][1] < 0 and playerDelta[1] < 0) or (block[1] - players[clientPlayerID]["pos"][1] > 0 and playerDelta[1] > 0):
-                            if block[1] - players[clientPlayerID]["pos"][1] < 0:
-                                playerDelta[1] = block[1] - (players[clientPlayerID]["pos"][1] + 0.5) + 2
+                    if players[0]["pos"][0] >= block[0] - 0.05 and players[0]["pos"][0] <= block[0] + 1.05:
+                        if block[1] - players[0]["pos"][1] <= 0:
+                            playerDelta[1] = block[1] - (players[0]["pos"][1] + 0.5) + 2
 
-                            elif block[1] - players[clientPlayerID]["pos"][1] > 0:
-                                playerDelta[1] = block[1] - (players[clientPlayerID]["pos"][1] + 0.5)
+                        else:
+                            playerDelta[1] = block[1] - (players[0]["pos"][1] + 0.5)
 
-                    if players[clientPlayerID]["pos"][1] >= block[1] - 0.05 and players[clientPlayerID]["pos"][1] <= block[1] + 1.05:
-                        if (block[0] - players[clientPlayerID]["pos"][0] < 0 and playerDelta[0] < 0) or (block[0] - players[clientPlayerID]["pos"][0] > 0 and playerDelta[0] > 0):
-                            if block[0] - players[clientPlayerID]["pos"][0] < 0:
-                                playerDelta[0] = block[0] - (players[clientPlayerID]["pos"][0] + 0.5) + 2
 
-                            elif block[0] - players[clientPlayerID]["pos"][0] > 0:
-                                playerDelta[0] = block[0] - (players[clientPlayerID]["pos"][0] + 0.5)
+
+                    if players[0]["pos"][1] >= block[1] - 0.05 and players[0]["pos"][1] <= block[1] + 1.05:
+                        if block[0] - players[0]["pos"][0] <= 0:
+                            playerDelta[0] = block[0] - (players[0]["pos"][0] + 0.5) + 2
+
+                        else:
+                            playerDelta[0] = block[0] - (players[0]["pos"][0] + 0.5)
 
 
 
@@ -1696,3 +1692,4 @@ def main():
     pygame.quit()
 
 main()
+
