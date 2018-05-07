@@ -70,6 +70,15 @@ def notGate(pixels, state):
         pygame.draw.circle(sprite, [192, 192, 192], [int(pixels / 2), int(pixels / 6)], int(pixels / 12), 0)
         return sprite
 
+def hidden(pixels):
+    sprite = pygame.Surface([pixels, pixels]).convert()
+    sprite.fill([32, 32, 32])
+    pygame.draw.line(sprite, [128, 128, 128], [0, 0], [pixels, pixels], 4)
+    pygame.draw.line(sprite, [128, 128, 128], [0, pixels / 2], [pixels / 2, pixels], 4)
+    pygame.draw.line(sprite, [128, 128, 128], [pixels / 2, 0], [pixels, pixels / 2], 4)
+    
+    return sprite
+
 def sprite(id, pixels, state):
     if id == 0:
         return air(pixels, state)

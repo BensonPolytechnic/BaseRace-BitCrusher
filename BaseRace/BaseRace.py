@@ -543,13 +543,13 @@ def main():
         # Input validation.
         if displayPlayerInfo.lower() == "y":
             displayPlayerInfo = True
-            
+
             while True:
                 clientPlayerID = input("Player ID of the client (0 and 1 are team blue, 2 and 3 are team orange): ")
-                
+
                 if clientPlayerID.isdigit():
                     clientPlayerID = int(clientPlayerID)
-                    
+
                     if clientPlayerID >= 0 and clientPlayerID <= 3:
                         break
 
@@ -642,7 +642,7 @@ def main():
 
         # Sets the display mode.
         window = pygame.display.set_mode((scrW, scrH), FULLSCREEN | HWSURFACE | DOUBLEBUF)
-        
+
         pygame.event.get()
 
         # Imports block data and resizes sprites.
@@ -749,7 +749,7 @@ def main():
 
         # Sets the display mode.
         window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
-        
+
         pygame.event.get()
 
         # Imports block data and resizes sprites.
@@ -763,16 +763,16 @@ def main():
             blockData = importBlockData(scrW / 16 + 1)
             defaultBlockWidth = scrW / 16 + 1
             print("fuck you and your disgusting screen resolution")
-    
+
     ctypes.windll.user32.mouse_event(2, 0, 0, 0,0) # left down
     ctypes.windll.user32.mouse_event(4, 0, 0, 0,0) # left up
-    
+
     #########################################
     ############# SOUND IMPORTS #############
     #########################################
-    
+
     ### SOUND EFFECTS
-    
+
     sounds = []
 
     # Sound indexes:
@@ -789,31 +789,33 @@ def main():
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "select.ogg")))
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "pageChange.ogg")))
     sounds.append(pygame.mixer.Sound(os.path.join("data", "sounds", "eaterOfSouls.ogg")))
-    
+
     sounds[3].set_volume(0.25)
     sounds[4].set_volume(0.5)
     sounds[5].set_volume(0.05)
 
     laserSoundTime = 0
-    
+
     creditScreenSoundTime = 0
 
     laserHold = False
-    
+
     ### MUSIC
-    
+
     #Indexes:
     # 0 - Main menu music
-    
+
     music = []
-    
+
     pygame.mixer.music.load(os.path.join("data", "sounds", "mainMenu.ogg"))
-    
+
     pygame.mixer.music.set_volume(0.25)
 
     #########################################
     ############## UI CREATION ##############
     #########################################
+
+    hiddenSprite = blocksprites.hidden(defaultBlockWidth)
 
     mainMenuSprite = pygame.Surface([scrW, scrH])
 
@@ -830,7 +832,7 @@ def main():
     mainMenuText = mainMenuFont.render("BASE RACE", 2, [0, 0, 0])
 
     mainMenuSprite.blit(mainMenuText, [scrW / 2 - mainMenuSprite.get_width() / 2 + defaultBlockWidth / 2.5, 0])
-    
+
     credit = pygame.Surface((scrW, scrH))
 
     for x in range(16):
@@ -846,8 +848,8 @@ def main():
     credit.blit(text[0], (leftbound + 15 + defaultBlockWidth * 2, topbound))
     credit.blit(text[1], (leftbound - defaultBlockWidth, int(defaultBlockWidth * 1.75 + topbound)))
     credit.blit(text[2], (leftbound - defaultBlockWidth / 2, int(defaultBlockWidth * 5.25   + topbound)))
-    
-    
+
+
 
     # there is literally no point to this the game is fullscreen.
     pygame.display.set_caption("BaseRace")
@@ -934,7 +936,7 @@ def main():
     blockSelectionSprites[1].fill([0, 0, 0, 0], pygame.Rect([inventorySelection.get_height() / 20, inventorySelection.get_height() / 20], [inventorySelection.get_height() * 9 / 10, inventorySelection.get_height() * 9 / 10]))
 
     clickPos = None
-    
+
     buttonHover = False
 
     # Position of the camera
@@ -1028,39 +1030,41 @@ def main():
     fpsCounter = pygame.time.Clock()
 
     print(blockData)
-    
+
     pygame.mixer.music.play(-1)
+
+    lineOfSight = True
 
     while not gameExit:
         if gameState == "credits":
             pygame.mixer.music.unpause()
             while gameState == "credits" and not gameExit:
-                
+
                 for i in pygame.event.get():
                     if i.type == pygame.QUIT:
                         gameExit = True
 
                     if i.type == pygame.KEYDOWN:
                         gameState = "menu"
-                
+
                 if time.time() - creditScreenSoundTime >= 1.5:
                     sounds[5].play()
-                
+
                 if time.time() - lastFrameTime > 0.016:
                 # drawing the surface onto the screen
                     window.blit(credit, (0,0))
                     window.blit(creditFont.render("Alex Elliott  EAtER oF SoULS", 2, (random.randint(0, 255), 0, 0)), (leftbound + 160 + random.randint(-8, 8), int(defaultBlockWidth * 3.5 + topbound) + random.randint(-8, 8)))
                     pygame.display.flip()
                     lastFrameTime = time.time()
-                    
-                    
-                        
+
+
+
             pygame.mixer.music.pause()
             sounds[5].stop()
-        
+
         if gameState == "menu":
             pygame.mixer.music.unpause()
-        
+
             while gameState == "menu" and not gameExit:
                 t.tick() # Ticks the clock. As of version 0.0.wheneverTazwelBitchedAtMeToPutMoreCommentsInMyCode, this is only used for displaying FPS.
 
@@ -1143,10 +1147,11 @@ def main():
                     pygame.display.flip()
 
                     lastFrameTime = time.time()
-            
+
             pygame.mixer.music.pause()
 
         while gameState == "game" and not gameExit:
+
             t.tick() # Ticks the clock. As of version 0.0.wheneverTazwelBitchedAtMeToPutMoreCommentsInMyCode, this is only used for displaying FPS.
 
             mousePos = pygame.mouse.get_pos() # Gets mouse position.
@@ -1249,7 +1254,7 @@ def main():
 
 
             else:
-                players[clientPlayerID]["isShooting"] = False        
+                players[clientPlayerID]["isShooting"] = False
                 if laserHold:
                     laserHold = False
 
@@ -1329,7 +1334,11 @@ def main():
 
             pointPos = [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]
 
-            collideRange = [[int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]]
+            collideRange = []
+
+            for x in range(4):
+                for y in range(4):
+                    collideRange.append([int(nextPlayerPos[0] + (x - 2) * 0.5), int(nextPlayerPos[1] + (y - 2) * 0.5)])
 
             magnitude = math.sqrt(math.pow(playerDelta[0], 2) + math.pow(playerDelta[1], 2))
 
@@ -1350,44 +1359,63 @@ def main():
 
                     if math.sqrt(math.pow(nextPlayerPos[0] - pointPos[0], 2) + math.pow(nextPlayerPos[1] - pointPos[1], 2)) < 0.45:
 
+                        if playerDelta[0] == 0:
+                            if math.sqrt(math.pow(nextPlayerPos[0] - preArcPos[0], 2) + math.pow(nextPlayerPos[1] - (pointPos[1] + math.sqrt(0.2025 - math.pow(players[0]["pos"][0] - pointPos[0], 2))), 2)) > math.sqrt(math.pow(nextPlayerPos[0] - preArcPos[0], 2) + math.pow(nextPlayerPos[1] - (pointPos[1] - math.sqrt(0.2025 - math.pow(players[0]["pos"][0] - pointPos[0], 2))), 2)):
+                                preArcPos[0] = players[0]["pos"][0]
+                                preArcPos[1] = pointPos[1] - math.sqrt(0.2025 - math.pow(players[0]["pos"][0] - pointPos[0], 2))
+                            else:
+                                preArcPos[0] = players[0]["pos"][0]
+                                preArcPos[1] = pointPos[1] + math.sqrt(0.2025 - math.pow(players[0]["pos"][0] - pointPos[0], 2))
+
+                        else:
+                            m = playerDelta[1] / playerDelta[0]
+                            b = nextPlayerPos[1] - m * nextPlayerPos[0]
+
+                            xPoints = quadraticSolutions(math.pow(m, 2) + 1, 2 * m * b - 2 * m * pointPos[1] - 2 * pointPos[0], math.pow(pointPos[0], 2) + math.pow(b, 2) + math.pow(pointPos[1], 2) - (2 * b * pointPos[1]) - 0.2025)
+
+                            if math.sqrt(math.pow((nextPlayerPos[0] - xPoints[0]), 2) + math.pow((nextPlayerPos[1] - (m * xPoints[0] + b)), 2)) < math.sqrt(math.pow((nextPlayerPos[0] - xPoints[1]), 2) + math.pow((nextPlayerPos[1] - (m * xPoints[1] + b)), 2)):
+                                preArcPos = [xPoints[0], m * xPoints[0] + b]
+                            else:
+                                preArcPos = [xPoints[1], m * xPoints[1] + b]
+
                         if (nextPlayerPos[0] - pointPos[0]) != 0:
                             if block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]:
                                 collideAngle = math.atan(((nextPlayerPos[1] - pointPos[1])) / ((nextPlayerPos[0] - pointPos[0])))
-
+                                players[0]["pos"] = preArcPos
                                 playerDelta = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
 
                             elif block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)]:
                                 collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / ((nextPlayerPos[0] - pointPos[0])))
-
+                                players[0]["pos"] = preArcPos
                                 playerDelta = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
 
                             elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)]:
-                                collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0]))
-
+                                collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
+                                players[0]["pos"] = preArcPos
                                 playerDelta = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
 
                             elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]:
-                                collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0]))
-
+                                collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
+                                players[0]["pos"] = preArcPos
                                 playerDelta = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
 
 
 
                     if players[clientPlayerID]["pos"][0] >= block[0] - 0.05 and players[clientPlayerID]["pos"][0] <= block[0] + 1.05:
-                        if block[1] - players[clientPlayerID]["pos"][1] <= 0:
-                            playerDelta[1] = block[1] - (players[clientPlayerID]["pos"][1] + 0.5) + 2
+                        if (block[1] - players[clientPlayerID]["pos"][1] < 0 and playerDelta[1] < 0) or (block[1] - players[clientPlayerID]["pos"][1] > 0 and playerDelta[1] > 0):
+                            if block[1] - players[clientPlayerID]["pos"][1] < 0:
+                                playerDelta[1] = block[1] - (players[clientPlayerID]["pos"][1] + 0.5) + 2
 
-                        else:
-                            playerDelta[1] = block[1] - (players[clientPlayerID]["pos"][1] + 0.5)
-
-
+                            elif block[1] - players[clientPlayerID]["pos"][1] > 0:
+                                playerDelta[1] = block[1] - (players[clientPlayerID]["pos"][1] + 0.5)
 
                     if players[clientPlayerID]["pos"][1] >= block[1] - 0.05 and players[clientPlayerID]["pos"][1] <= block[1] + 1.05:
-                        if block[0] - players[clientPlayerID]["pos"][0] <= 0:
-                            playerDelta[0] = block[0] - (players[clientPlayerID]["pos"][0] + 0.5) + 2
+                        if (block[0] - players[clientPlayerID]["pos"][0] < 0 and playerDelta[0] < 0) or (block[0] - players[clientPlayerID]["pos"][0] > 0 and playerDelta[0] > 0):
+                            if block[0] - players[clientPlayerID]["pos"][0] < 0:
+                                playerDelta[0] = block[0] - (players[clientPlayerID]["pos"][0] + 0.5) + 2
 
-                        else:
-                            playerDelta[0] = block[0] - (players[clientPlayerID]["pos"][0] + 0.5)
+                            elif block[0] - players[clientPlayerID]["pos"][0] > 0:
+                                playerDelta[0] = block[0] - (players[clientPlayerID]["pos"][0] + 0.5)
 
 
 
@@ -1466,7 +1494,7 @@ def main():
 
 
                 for column in range(int(cameraPos[0] - (cameraZoom / 2)) - 1, int(cameraPos[0] + (cameraZoom / 2)) + 1): # Scans accross the world area of the world visible to the camera in columns
-                    if column < 0 or column > worldSize[0] - 1: # If the column is outside of the world, continue, because that would crash the program.
+                    if column < 0 or column >= worldSize[0]: # If the column is outside of the world, continue, because that would crash the program.
                         continue
                     else:
                         for row in range(int(cameraPos[1] - ((cameraZoom * (scrH / scrW)) // 2)) - 1, int(cameraPos[1] + ((cameraZoom * (scrH / scrW)) // 2)) + 2): # Scans accross the world area of the world visible to the camera in rows
@@ -1476,7 +1504,6 @@ def main():
                             else:
                              # Blit the corresponding sprite to the block type in the column and row in the relative position of the block on the screen.
                                 window.blit(blockSprites[world[column][row]["type"]][world[column][row]["state"]][world[column][row]["rotation"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)])
-
 
                                 if world[column][row]["type"] != 0 and world[column][row]["health"] / blockData[world[column][row]["type"]]["health"] != 1:
                                     healthSprite.fill([0, 0, 0, 64])
@@ -1489,17 +1516,17 @@ def main():
                 # Displays the player's lasers, and plays sounds if they're firing.
                 playerCameraDistance = 10.0
                 firingPlayerSound = 0
-                
+
                 for player in players:
                     if player["isShooting"]:
-                        
+
                         if math.sqrt(math.pow(player["pos"][0] - cameraPos[0], 2) + math.pow(player["pos"][1] - cameraPos[1], 2)) < playerCameraDistance:
                             playerCameraDistance = math.sqrt(math.pow(player["pos"][0] - cameraPos[0], 2) + math.pow(player["pos"][1] - cameraPos[1], 2))
                             if player["energy"] > 1:
                                 firingPlayerSound = 0
                             else:
                                 firingPlayerSound = 1
-                            
+
                         if player["energy"] - (time.time() - lastFrameTime) * 30 > 0:
                             colorMultiplier = random.randint(-2, 3)
                             if colorMultiplier > 0:
@@ -1524,19 +1551,19 @@ def main():
                         player["energy"] = 100
 
 
-                
-                
+
+
                 if playerCameraDistance <= 2:
                     sounds[0].set_volume(1.0)
                     sounds[2].set_volume(1.0)
-                    
+
                 elif playerCameraDistance <= 9:
                     sounds[0].set_volume(1 - (playerCameraDistance / 9))
                     sounds[2].set_volume(1 - (playerCameraDistance / 9))
                 else:
                     sounds[0].set_volume(0)
                     sounds[2].set_volume(0)
-                
+
                 if firingPlayerSound == 0 and playerCameraDistance <= 9:
                     if time.time() - laserSoundTime > 2:
                         sounds[2].stop()
@@ -1548,7 +1575,7 @@ def main():
                         sounds[0].stop()
                         sounds[2].play()
                         laserSoundTime = time.time()
-                            
+
                 # Displays players.
 
                 spriteWorldPos = getWorldPos(mousePos)
@@ -1596,8 +1623,8 @@ def main():
                     # Catches if the player's rotation is straight down.
                     else:
                         pygame.draw.circle(window, [teams[player["team"]]["color"][0] // 2, teams[player["team"]]["color"][1] // 2, teams[player["team"]]["color"][2] // 2], [relPlayerPos[0], relPlayerPos[1] + playerLaserDist], int(scrW / (8 * cameraZoom)), 0) # Blits the circle.
-                    
-                    
+
+
 
                     # If debug tools are enabled, this displays player information.
                     if displayPlayerInfo:
@@ -1660,7 +1687,6 @@ def main():
                 window.blit(fpsDisplayFont.render("fps: " + str(fpsCounter.get_fps()), 0, (255, 0, 0)), [0, 0])
 
                 fpsCounter.tick()
-
 
                 #Updates the screen
                 lastFrameTime = time.time()
