@@ -425,7 +425,6 @@ def importBlockData(pixels):
                 elif blockFileData[line + blockLine][:blockFileData[line+blockLine].find(".")] == "float":
                     blockInfo[len(blockInfo) - 1][blockFileData[line + blockLine][blockFileData[line + blockLine].find(".") + 1:blockFileData[line + blockLine].find(":")]] = float(blockFileData[line + blockLine][blockFileData[line + blockLine].find(":") + 1:blockFileData[line + blockLine].find(";")])
 
-
                 blockLine += 1 # bebebebebebebebebe
 
     # stupid fucking piece of shit
@@ -847,7 +846,7 @@ def main():
     topbound = defaultBlockWidth - 10
     credit.blit(text[0], (leftbound + 15 + defaultBlockWidth * 2, topbound))
     credit.blit(text[1], (leftbound - defaultBlockWidth, int(defaultBlockWidth * 1.75 + topbound)))
-    credit.blit(text[2], (leftbound - defaultBlockWidth / 2, int(defaultBlockWidth * 5.25   + topbound)))
+    credit.blit(text[2], (leftbound - defaultBlockWidth / 2, int(defaultBlockWidth * 5.25 + topbound)))
 
 
 
@@ -1356,12 +1355,12 @@ def main():
                     if math.sqrt(math.pow(nextPlayerPos[0] - pointPos[0], 2) + math.pow(nextPlayerPos[1] - pointPos[1], 2)) < 0.45:
 
                         if playerDelta[0] == 0:
-                            if math.sqrt(math.pow(nextPlayerPos[0] - preArcPos[0], 2) + math.pow(nextPlayerPos[1] - (pointPos[1] + math.sqrt(0.2025 - math.pow(players[0]["pos"][0] - pointPos[0], 2))), 2)) > math.sqrt(math.pow(nextPlayerPos[0] - preArcPos[0], 2) + math.pow(nextPlayerPos[1] - (pointPos[1] - math.sqrt(0.2025 - math.pow(players[0]["pos"][0] - pointPos[0], 2))), 2)):
-                                preArcPos[0] = players[0]["pos"][0]
-                                preArcPos[1] = pointPos[1] - math.sqrt(0.2025 - math.pow(players[0]["pos"][0] - pointPos[0], 2))
+                            if math.sqrt(math.pow(nextPlayerPos[0] - preArcPos[0], 2) + math.pow(nextPlayerPos[1] - (pointPos[1] + math.sqrt(0.2025 - math.pow(players[clientPlayerID]["pos"][0] - pointPos[0], 2))), 2)) > math.sqrt(math.pow(nextPlayerPos[0] - preArcPos[0], 2) + math.pow(nextPlayerPos[1] - (pointPos[1] - math.sqrt(0.2025 - math.pow(players[clientPlayerID]["pos"][0] - pointPos[0], 2))), 2)):
+                                preArcPos[0] = players[clientPlayerID]["pos"][0]
+                                preArcPos[1] = pointPos[1] - math.sqrt(0.2025 - math.pow(players[clientPlayerID]["pos"][0] - pointPos[0], 2))
                             else:
-                                preArcPos[0] = players[0]["pos"][0]
-                                preArcPos[1] = pointPos[1] + math.sqrt(0.2025 - math.pow(players[0]["pos"][0] - pointPos[0], 2))
+                                preArcPos[0] = players[clientPlayerID]["pos"][0]
+                                preArcPos[1] = pointPos[1] + math.sqrt(0.2025 - math.pow(players[clientPlayerID]["pos"][0] - pointPos[0], 2))
 
                         else:
                             m = playerDelta[1] / playerDelta[0]
@@ -1377,41 +1376,41 @@ def main():
                         if (nextPlayerPos[0] - pointPos[0]) != 0:
                             if block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]:
                                 collideAngle = math.atan(((nextPlayerPos[1] - pointPos[1])) / ((nextPlayerPos[0] - pointPos[0])))
-                                players[0]["pos"] = preArcPos
+                                players[clientPlayerID]["pos"] = preArcPos
                                 playerDelta = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
 
                             elif block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)]:
                                 collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / ((nextPlayerPos[0] - pointPos[0])))
-                                players[0]["pos"] = preArcPos
+                                players[clientPlayerID]["pos"] = preArcPos
                                 playerDelta = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
 
                             elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)]:
                                 collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
-                                players[0]["pos"] = preArcPos
+                                players[clientPlayerID]["pos"] = preArcPos
                                 playerDelta = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
 
                             elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]:
                                 collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
-                                players[0]["pos"] = preArcPos
+                                players[clientPlayerID]["pos"] = preArcPos
                                 playerDelta = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
 
 
 
-                    if players[0]["pos"][0] >= block[0] - 0.05 and players[0]["pos"][0] <= block[0] + 1.05:
-                        if block[1] - players[0]["pos"][1] <= 0:
-                            playerDelta[1] = block[1] - (players[0]["pos"][1] + 0.5) + 2
+                    if players[clientPlayerID]["pos"][0] >= block[0] - 0.05 and players[clientPlayerID]["pos"][0] <= block[0] + 1.05:
+                        if block[1] - players[clientPlayerID]["pos"][1] <= 0:
+                            playerDelta[1] = block[1] - (players[clientPlayerID]["pos"][1] + 0.5) + 2
 
                         else:
-                            playerDelta[1] = block[1] - (players[0]["pos"][1] + 0.5)
+                            playerDelta[1] = block[1] - (players[clientPlayerID]["pos"][1] + 0.5)
 
 
 
-                    if players[0]["pos"][1] >= block[1] - 0.05 and players[0]["pos"][1] <= block[1] + 1.05:
-                        if block[0] - players[0]["pos"][0] <= 0:
-                            playerDelta[0] = block[0] - (players[0]["pos"][0] + 0.5) + 2
+                    if players[clientPlayerID]["pos"][1] >= block[1] - 0.05 and players[clientPlayerID]["pos"][1] <= block[1] + 1.05:
+                        if block[0] - players[clientPlayerID]["pos"][0] <= 0:
+                            playerDelta[0] = block[0] - (players[clientPlayerID]["pos"][0] + 0.5) + 2
 
                         else:
-                            playerDelta[0] = block[0] - (players[0]["pos"][0] + 0.5)
+                            playerDelta[0] = block[0] - (players[clientPlayerID]["pos"][0] + 0.5)
 
 
 
@@ -1487,7 +1486,7 @@ def main():
                 #///CAUTION///CAUTION///CAUTION///CAUTION
                 previousZoom = cameraZoom# DO NOT TOUCH
                 #///CAUTION///CAUTION///CAUTION///CAUTION
-
+                                        
 
                 for column in range(int(cameraPos[0] - (cameraZoom / 2)) - 1, int(cameraPos[0] + (cameraZoom / 2)) + 1): # Scans accross the world area of the world visible to the camera in columns
                     if column < 0 or column >= worldSize[0]: # If the column is outside of the world, continue, because that would crash the program.
