@@ -1,7 +1,7 @@
 # *** GRAPHICS ENGINE ***
 # This is a thing that makes pixels on a screen turn pretty colors
 
-import pygame, os, time, math, importlib.util, random, ctypes
+import pygame, os, time, math, importlib.util, random, ctypes, threading, queue
 from pygame.locals import *
 
 spriteImportFunc = importlib.util.spec_from_file_location("blocksprites.py", os.path.join("data", "blocks", "blocksprites.py"))
@@ -12,6 +12,16 @@ pygame.mixer.pre_init(44100, 16, 2, 4096)
 pygame.init()
 pygame.mixer.init()
 pygame.font.init()
+
+def handleServer(dataQueue, serverHost, serverPort):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
+    sock.connect((serverHost, serverPort))
+    
+    while True:
+        data = sock.recv(1024)
+        dataQueue.put(data.decode('ascii'))
+
 
 # Takes a position of a point in the world, and returns its position on the screen in pixels.
 def getScreenPos(pos):
@@ -530,6 +540,17 @@ def createMenuButtons():
 
 # Mildly important.
 def main():
+    serverHost = input("Address of the server: ")
+    
+    while True:
+        serverPort = input("Port of the server: ")
+        
+        if serverPort.isdigit():
+            serverPort = int(serverPort)
+            break
+    
+    
+    
     global scrW # Width of the screen
 
     global scrH # Height of he screen
@@ -1033,6 +1054,14 @@ def main():
     pygame.mixer.music.play(-1)
 
     lineOfSight = True
+    
+    dataQueue = queue.Queue(128)
+    
+    connectionHandler = threading.Thread(target=handleServer, args=(dataQueue, serverHost, serverPort))
+    
+    connectionHandler.start()
+    
+    serverData = []
 
     while not gameExit:
         if gameState == "credits":
@@ -1231,7 +1260,6 @@ def main():
                     elif event.button == 3: # Right click detection
                         inputSet[5] = 0
 
-
             # Checks if the mouse is being clicked, and makes the player start shooting if it is.
             if inputSet[4] == 1:
                 if dispInventory:
@@ -1421,6 +1449,29 @@ def main():
             # Changes camera position, with smoothness.
             # Also allows the player to look around with the mouse.
             cameraPos = [cameraPos[0] + ((((mousePos[0] - (scrW / 2)) / (scrW / cameraZoom)) / 200) + (players[clientPlayerID]["pos"][0] - cameraPos[0]) / 50) * (t.get_time() * 0.5), cameraPos[1] + ((((mousePos[1] - (scrH / 2)) / (scrW / cameraZoom)) / 200) + (players[clientPlayerID]["pos"][1] - cameraPos[1]) / 50) * (t.get_time() * 0.5)]
+
+            ####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+
+####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+
+
+####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+####### SERVER STUFF YAYAYAYAYAYYZAYAA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYAYAYAYAYAYYAYAYAYA
+####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYAYAYAYYAYAYAYA
+####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+
+####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+
+
+####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
 
 
             # This the important thing.
