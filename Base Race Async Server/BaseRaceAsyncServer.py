@@ -29,7 +29,10 @@ def handleConnections(sendQueue, dataQueue, port):
                 descriptors.append(sock.accept()[0])
                 
             else:
-                data = sock.recv(1024)
+                try:
+                    data = sock.recv(1024)
+                except:
+                    continue
                 
                 if data == '':
                     sock.close()
@@ -409,13 +412,18 @@ def main():
         
         if clientData != []:
             for packet in clientData:
-                if packet == '' or packet == "a":
-                    continue
-                if packet[2] == "0":
-                    playerUpdates.append(packet)
+                packet = packet.split("|")
+
+                for item in packet:
+                    if item == '':
+                        continue
+                    if item[0] == "0":
+                        playerUpdates.append(item)
         
         if playerUpdates != []:
             for update in playerUpdates:
+                update = update[1:]
+                
                 if uniquePlayers == []:
                     uniquePlayers.append(update)
                 else:
@@ -432,15 +440,12 @@ def main():
             playerUpdates = []
             
             if uniquePlayers != []:
-                time.sleep(0.1)
                 for update in uniquePlayers:
-                    update = update[0] + update[2:]
-                    update = update.replace("", ",")
-                    update = update[1:len(update) - 1]
+                    update = ",".join(update)
                 
-                uniquePlayers = ",".join(uniquePlayers)
+                uniquePlayers = "*".join(uniquePlayers)
                 
-                uniquePlayers = "0," + uniquePlayers
+                uniquePlayers = "|0," + uniquePlayers + "|"
                 
                 sendQueue.put(bytes(uniquePlayers, "ascii"))
                 

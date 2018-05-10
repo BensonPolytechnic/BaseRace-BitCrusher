@@ -18,7 +18,6 @@ def handleServer(sock, dataQueue, serverHost, serverPort):
     
     while True:
         data = sock.recv(1024)
-        print(data)
         dataQueue.put(data.decode('ascii'))
 
 
@@ -84,25 +83,48 @@ def simplifyPlayerArray(playerArray):
 
     return simpleArray
 
+def simplePlayer(player):
+    simpleArray = []
+    
+    for i in range(8):
+        simpleArray.append("0")
+
+    for key in player:
+        if key == "team":
+            simpleArray[1] = str(player["team"])
+
+        elif key == "pos":
+            simpleArray[2] = str(int(player["pos"][0] * 100))
+            simpleArray[3] = str(int(player["pos"][1] * 100))
+
+        elif key == "rotation":
+            simpleArray[4] = str(toDeg(player["rotation"]))
+
+            simpleArray[5] = str(int(player["health"]))
+
+        elif key == "energy":
+            simpleArray[6] = str(int(player["energy"]))
+
+    return ",".join(simpleArray)
+
 # This takes the array returned by simplifyPlayerArray() and
 # returns the normal player dictionary thing.
 def complicatePlayerArray(simpleArray):
-    playerArray = []
+    playerArray = {}
 
     for player in range(len(simpleArray)):
-        playerArray.append({})
+        
+        playerArray["team"] = int(simpleArray[0])
 
-        playerArray[player]["team"] = simpleArray[player][0]
+        playerArray["health"] = int(simpleArray[4])
 
-        playerArray[player]["health"] = simpleArray[player][4]
+        playerArray["pos"] = [int(simpleArray[1]) / 100, int(simpleArray[2]) / 100]
 
-        playerArray[player]["pos"] = [simpleArray[player][1] / 100, simpleArray[player][2] / 100]
+        playerArray["energy"] = int(simpleArray[5])
 
-        playerArray[player]["energy"] = simpleArray[player][5]
+        playerArray["rotation"] = toSlope(int(simpleArray[3]))
 
-        playerArray[player]["rotation"] = toSlope(simpleArray[player][3])
-
-        playerArray[player]["isShooting"] = bool(simpleArray[player][6])
+        playerArray["isShooting"] = bool(int(simpleArray[6]))
 
     return playerArray
 
@@ -1467,12 +1489,36 @@ def main():
             ####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
 
             if time.time() - serverComTime > 1 / serverComFrequency:
-                sock.send(bytes("0,0,0,0,0,0,0,0,0", "ascii"))
+                sock.send(bytes("|0," + str(clientPlayerID) + "," + simplePlayer(players[clientPlayerID]) + "|", "ascii"))
+
+                print(dataQueue.qsize())
                 
                 for item in range(dataQueue.qsize()):
                     serverData.append(dataQueue.get())
                     dataQueue.task_done()
                 
+                serverData = "".join(serverData)
+
+                serverData = serverData.split("|")
+
+                for packet in serverData:
+                    if packet == '':
+                        serverData.remove(packet)
+                        continue
+                    elif packet[0] =="0":
+                        packet = packet[2:]
+                        packet = packet = packet.split("*")
+
+                        for player in packet:
+                            if player == "":
+                                continue
+                            
+                            player = player.split(",")
+                            if int(player[0]) == clientPlayerID:
+                                continue
+                            else:
+                                players[int(player[0])] = complicatePlayerArray(player[1:])
+
                 serverData = []
                 
                 serverComTime = time.time()
