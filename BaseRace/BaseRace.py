@@ -100,6 +100,7 @@ def simplePlayer(player):
         elif key == "rotation":
             simpleArray[4] = str(toDeg(player["rotation"]))
 
+        elif key == "health":
             simpleArray[5] = str(int(player["health"]))
 
         elif key == "energy":
