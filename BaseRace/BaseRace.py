@@ -1,7 +1,7 @@
 # *** GRAPHICS ENGINE ***
 # This is a thing that makes pixels on a screen turn pretty colors
 
-import pygame, os, time, math, importlib.util, random, ctypes, threading, queue
+import pygame, os, time, math, importlib.util, random, ctypes, threading, queue, socket
 from pygame.locals import *
 
 spriteImportFunc = importlib.util.spec_from_file_location("blocksprites.py", os.path.join("data", "blocks", "blocksprites.py"))
@@ -13,13 +13,12 @@ pygame.init()
 pygame.mixer.init()
 pygame.font.init()
 
-def handleServer(dataQueue, serverHost, serverPort):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
+def handleServer(sock, dataQueue, serverHost, serverPort):
     sock.connect((serverHost, serverPort))
     
     while True:
         data = sock.recv(1024)
+        print(data)
         dataQueue.put(data.decode('ascii'))
 
 
@@ -654,14 +653,23 @@ def main():
 
     if fromFile:
 
+##        # Gets the width of the screen in pixels.
+##        scrW = pygame.display.Info().current_w
+##
+##        # Gets the height of the screen in pixels.
+##        scrH = pygame.display.Info().current_h
+##
+##        # Sets the display mode.
+##        window = pygame.display.set_mode((scrW, scrH), FULLSCREEN | HWSURFACE | DOUBLEBUF)
+        
         # Gets the width of the screen in pixels.
-        scrW = pygame.display.Info().current_w
+        scrW = pygame.display.Info().current_w // 2
 
         # Gets the height of the screen in pixels.
-        scrH = pygame.display.Info().current_h
+        scrH = pygame.display.Info().current_h // 2
 
         # Sets the display mode.
-        window = pygame.display.set_mode((scrW, scrH), FULLSCREEN | HWSURFACE | DOUBLEBUF)
+        window = pygame.display.set_mode((scrW, scrH))
 
         pygame.event.get()
 
@@ -1046,7 +1054,9 @@ def main():
     #########################################################################################################################################################################################
     ### MAIN LOOP ###########################################################################################################################################################################
     #########################################################################################################################################################################################
-
+    
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
     fpsCounter = pygame.time.Clock()
 
     print(blockData)
@@ -1057,7 +1067,11 @@ def main():
     
     dataQueue = queue.Queue(128)
     
-    connectionHandler = threading.Thread(target=handleServer, args=(dataQueue, serverHost, serverPort))
+    serverComFrequency = 30
+    
+    serverComTime = time.time()
+    
+    connectionHandler = threading.Thread(target=handleServer, args=(sock, dataQueue, serverHost, serverPort))
     
     connectionHandler.start()
     
@@ -1452,26 +1466,16 @@ def main():
 
             ####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
 
-####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
-
-
-####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
-####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
-####### SERVER STUFF YAYAYAYAYAYYZAYAA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYAYAYAYAYAYYAYAYAYA
-####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
-####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
-####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
-####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
-####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
-####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYAYAYAYYAYAYAYA
-####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
-####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
-####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
-
-####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
-
-
-####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+            if time.time() - serverComTime > 1 / serverComFrequency:
+                sock.send(bytes("0,0,0,0,0,0,0,0,0", "ascii"))
+                
+                for item in range(dataQueue.qsize()):
+                    serverData.append(dataQueue.get())
+                    dataQueue.task_done()
+                
+                serverData = []
+                
+                serverComTime = time.time()
 
 
             # This the important thing.

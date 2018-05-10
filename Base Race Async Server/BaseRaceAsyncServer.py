@@ -1,8 +1,8 @@
-import time, socket, threading, select, queue
+import time, socket, threading, select, queue, os
 
-def handleConnections(dataQueue, port):
+def handleConnections(sendQueue, dataQueue, port):
     srvSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
+
     #host = "127.0.0.1"
     
     host = ""
@@ -13,13 +13,14 @@ def handleConnections(dataQueue, port):
     
     srvSocket.listen(4)
     
+    sendData = []
+    
     descriptors = [srvSocket]
     
     while True:
      
         # Await an event on a readable socket descriptor
         (sread, swrite, sexc) = select.select(descriptors, [], [])
-     
         
         for sock in sread:
 
@@ -36,6 +37,18 @@ def handleConnections(dataQueue, port):
                     
                 else:
                     dataQueue.put(data.decode('ascii'))
+            
+            for item in range(sendQueue.qsize()):
+                sendData.append(sendQueue.get())
+                sendQueue.task_done()
+                
+            for sock in descriptors:
+                for item in sendData:
+                    if sock != srvSocket:
+                        sock.send(item)
+            
+            sendData = []
+                    
 
 def raycast(point, slope, dir=0, team=None):
     collisions = []
@@ -302,7 +315,7 @@ def raycast(point, slope, dir=0, team=None):
 
         return nearestCollision
 
-def importBlockData(pixels):
+def importBlockData():
     blockInfo = [] # Stores lines of 'blockdata.txt'
 
     blockInfoImport = open(os.path.join("data", "blocks", "blockdata.txt"), "r") # File object used to import data
@@ -357,15 +370,15 @@ def main():
     
     dataQueue = queue.Queue(128)
     
+    sendQueue = queue.Queue(128)
+    
     clientData = []
     
-    connectionHandler = threading.Thread(target=handleConnections, args=(dataQueue, port))
+    connectionHandler = threading.Thread(target=handleConnections, args=(sendQueue, dataQueue, port))
     
     connectionHandler.start()
     
     serverRunning = True
-    
-    clientData = []
     
     global blockData
     blockData = importBlockData()
@@ -381,21 +394,59 @@ def main():
 
         for y in range(worldSize[1]):
             world[x].append({"type":0, "state":0, "rotation":0, "health":0})
+            
+    
+    playerUpdates = []
+    
+    uniquePlayers = []
+    
+    playerInUpdates = False
     
     while serverRunning:
-        
         for item in range(dataQueue.qsize()):
             clientData.append(dataQueue.get())
+            dataQueue.task_done()
         
         if clientData != []:
-            clientData = clientData.join()
+            for packet in clientData:
+                if packet == '' or packet == "a":
+                    continue
+                if packet[2] == "0":
+                    playerUpdates.append(packet)
+        
+        if playerUpdates != []:
+            for update in playerUpdates:
+                if uniquePlayers == []:
+                    uniquePlayers.append(update)
+                else:
+                    playerInUpdates = False
+                    
+                    for player in uniquePlayers:
+                        if player[0] == update[0]:
+                            playerInUpdates = True
+                            break
+                    
+                    if not playerInUpdates:
+                        uniquePlayers.append(update)
             
-            if client
+            playerUpdates = []
             
-        
-        
-        
-        
+            if uniquePlayers != []:
+                time.sleep(0.1)
+                for update in uniquePlayers:
+                    update = update[0] + update[2:]
+                    update = update.replace("", ",")
+                    update = update[1:len(update) - 1]
+                
+                uniquePlayers = ",".join(uniquePlayers)
+                
+                uniquePlayers = "0," + uniquePlayers
+                
+                sendQueue.put(bytes(uniquePlayers, "ascii"))
+                
+                uniquePlayers = []
+            
+                    
         # Do stuff
     
 
