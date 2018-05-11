@@ -1281,10 +1281,15 @@ def main():
                     denyBlockPlacement = False
 
                     for player in players:
-                        if spriteWorldPos in [[int(player["pos"][0] + 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] + 0.5), int(player["pos"][1] - 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] - 0.5)]]:
+                        if round(player["pos"][0], 1) == int(player["pos"][0]) + 0.5 and round(player["pos"][1], 1) == int(player["pos"][1]) + 0.5:
+                            if spriteWorldPos == [int(player["pos"][0]), int(player["pos"][1])]:
+                                denyBlockPlacement = True
+                                break
+
+                        elif spriteWorldPos in [[int(player["pos"][0] + 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] + 0.5), int(player["pos"][1] - 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] - 0.5)]]:
                             denyBlockPlacement = True
                             break
-                
+
 
 
             # Checks if the mouse is being clicked, and makes the player start shooting if it is.
@@ -1292,7 +1297,7 @@ def main():
                 if uiState == "inventory":
                     if spriteWorldPos[0] >= 0 and spriteWorldPos[0] < worldSize[0] and spriteWorldPos[1] >= 0 and spriteWorldPos[1] < worldSize[1]:
                         if world[spriteWorldPos[0]][spriteWorldPos[1]]["type"] == 0 and not denyBlockPlacement:
-                            blockUpdate = [str(spriteWorldPos[0]), str(spriteWorldPos[1]), str(targetScroll), "0", "0", str(blockData[targetScroll]["health"])]
+                            blockUpdate = [str(spriteWorldPos[0]), str(spriteWorldPos[1]), str(playerInventory[targetScroll]), "0", "0", str(blockData[playerInventory[targetScroll]]["health"])]
                             if blockUpdate not in blockUpdates:
                                 disallowPlacementFlag = False
 
@@ -1563,7 +1568,7 @@ def main():
 
 
             for update in pendingBlockUpdates:
-                if update[2] + 0.25 - time.time() <= 0:
+                if time.time() - update[2] > 0.25:
                     pendingBlockUpdates.remove(update)
 
             # This the important thing.
@@ -1823,5 +1828,6 @@ def main():
                 pygame.display.flip()
 
     pygame.quit()
+    sock.close()
 
 main()
