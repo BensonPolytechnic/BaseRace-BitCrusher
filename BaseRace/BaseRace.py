@@ -15,7 +15,7 @@ pygame.font.init()
 
 def handleServer(sock, dataQueue, serverHost, serverPort):
     sock.connect((serverHost, serverPort))
-    
+
     while True:
         data = sock.recv(1024)
         dataQueue.put(data.decode('ascii'))
@@ -45,66 +45,36 @@ def quadraticSolutions(a, b, c):
 # 4 - Health of the player (0-100)
 # 5 - Energy pf the player (0-100)
 # 6 - Whether the player is shooting (0 or 1)
-def simplifyPlayerArray(playerArray):
-    simpleArray = []
-
-    for player in range(len(playerArray)):
-        simpleArray.append([])
-
-        for key in playerArray[player]:
-            simpleArray[player].append(0)
-
-        simpleArray[player].append(0)
-
-        for key in playerArray[player]:
-            if key == "team":
-                simpleArray[player][0] = playerArray[player]["team"]
-
-            elif key == "pos":
-                simpleArray[player][1] = int(playerArray[player]["pos"][0] * 100)
-
-                simpleArray[player][2] = int(playerArray[player]["pos"][1] * 100)
-
-            elif key == "rotation":
-                simpleArray[player][3] = int(toDeg(playerArray[player]["rotation"]))
-
-            elif key == "health":
-                simpleArray[player][4] = int(playerArray[player]["health"])
-
-            elif key == "energy":
-                simpleArray[player][5] = int(playerArray[player]["energy"])
-
-            elif "isShooting":
-                if playerArray[player]["isShooting"]:
-                    simpleArray[player][6] = 1
-
-                else:
-                    simpleArray[player][6] = 0
-
-    return simpleArray
 
 def simplePlayer(player):
     simpleArray = []
-    
-    for i in range(8):
+
+    for i in range(9):
         simpleArray.append("0")
 
     for key in player:
         if key == "team":
-            simpleArray[1] = str(player["team"])
+            simpleArray[0] = str(player["team"])
 
         elif key == "pos":
-            simpleArray[2] = str(int(player["pos"][0] * 100))
-            simpleArray[3] = str(int(player["pos"][1] * 100))
+            simpleArray[1] = str(int(player["pos"][0] * 100))
+            simpleArray[2] = str(int(player["pos"][1] * 100))
 
         elif key == "rotation":
-            simpleArray[4] = str(toDeg(player["rotation"]))
+            simpleArray[3] = str(toDeg(player["rotation"]))
 
         elif key == "health":
-            simpleArray[5] = str(int(player["health"]))
+            simpleArray[4] = str(int(player["health"]))
 
         elif key == "energy":
-            simpleArray[6] = str(int(player["energy"]))
+            simpleArray[5] = str(int(player["energy"]))
+
+        elif key == "isShooting":
+
+            if player["isShooting"]:
+                simpleArray[6] = "1"
+            else:
+                simpleArray[6] = "0"
 
     return ",".join(simpleArray)
 
@@ -114,7 +84,7 @@ def complicatePlayerArray(simpleArray):
     playerArray = {}
 
     for player in range(len(simpleArray)):
-        
+
         playerArray["team"] = int(simpleArray[0])
 
         playerArray["health"] = int(simpleArray[4])
@@ -123,7 +93,7 @@ def complicatePlayerArray(simpleArray):
 
         playerArray["energy"] = int(simpleArray[5])
 
-        playerArray["rotation"] = toSlope(int(simpleArray[3]))
+        playerArray["rotation"] = toSlope(float(simpleArray[3]))
 
         playerArray["isShooting"] = bool(int(simpleArray[6]))
 
@@ -563,16 +533,16 @@ def createMenuButtons():
 # Mildly important.
 def main():
     serverHost = input("Address of the server: ")
-    
+
     while True:
         serverPort = input("Port of the server: ")
-        
+
         if serverPort.isdigit():
             serverPort = int(serverPort)
             break
-    
-    
-    
+
+
+
     global scrW # Width of the screen
 
     global scrH # Height of he screen
@@ -684,7 +654,7 @@ def main():
 ##
 ##        # Sets the display mode.
 ##        window = pygame.display.set_mode((scrW, scrH), FULLSCREEN | HWSURFACE | DOUBLEBUF)
-        
+
         # Gets the width of the screen in pixels.
         scrW = pygame.display.Info().current_w // 2
 
@@ -1018,7 +988,7 @@ def main():
     # rotation - A list containing a slope and direction.
     # isShooting - Whether or not the player is shooting.
     global players
-    players = [{"team":0, "health":100, "pos":[16.0, 16.0], "energy":100, "rotation":[0, 0], "isShooting":False}, {"team":0, "health":100, "pos":[12.0, 4.0], "energy":100, "rotation":[-0.5, 1], "isShooting":False}, {"team":1, "health":100, "pos":[18.0, 29.0], "energy":100, "rotation":[5.1, 1], "isShooting":False}, {"team":1, "health":100, "pos":[18.0, 27.0], "energy":100, "rotation":[2.3, -1], "isShooting":True}]
+    players = [{"team":0, "health":100, "pos":[16.0, 16.0], "energy":100, "rotation":[0, 0], "isShooting":False, "delta":[0.0, 0.0]}, {"team":0, "health":100, "pos":[12.0, 4.0], "energy":100, "rotation":[-0.5, 1], "isShooting":False, "delta":[0.0, 0.0]}, {"team":1, "health":100, "pos":[18.0, 29.0], "energy":100, "rotation":[5.1, 1], "isShooting":False, "delta":[0.0, 0.0]}, {"team":1, "health":100, "pos":[18.0, 27.0], "energy":100, "rotation":[2.3, -1], "isShooting":True, "delta":[0.0, 0.0]}]
 
     # Radius of the player's body
     global playerRadius
@@ -1077,27 +1047,25 @@ def main():
     #########################################################################################################################################################################################
     ### MAIN LOOP ###########################################################################################################################################################################
     #########################################################################################################################################################################################
-    
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
-    fpsCounter = pygame.time.Clock()
 
-    print(blockData)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    fpsCounter = pygame.time.Clock()
 
     pygame.mixer.music.play(-1)
 
     lineOfSight = True
-    
+
     dataQueue = queue.Queue(128)
-    
-    serverComFrequency = 30
-    
+
+    serverComFrequency = 60
+
     serverComTime = time.time()
-    
+
     connectionHandler = threading.Thread(target=handleServer, args=(sock, dataQueue, serverHost, serverPort))
-    
+
     connectionHandler.start()
-    
+
     serverData = []
 
     while not gameExit:
@@ -1324,8 +1292,7 @@ def main():
 
 
 
-            # Based on what keys are being pressed (WSAD, or the first four values in inputSet, respectively),
-            # this changes playerDelta.
+            
             if (inputSet[0] != inputSet[1]) and (inputSet[2] != inputSet[3]): # This checks if up OR down, and left OR right are being pressed, to see if the player should be moved diagonally.
                 if inputSet[0] == 1: # This checks if up is being pressed.
 
@@ -1389,6 +1356,8 @@ def main():
 
             elif playerDelta[1] + players[clientPlayerID]["pos"][1] < 0.5: # Check if the player will go outside the top edge
                 playerDelta[1] = -(players[clientPlayerID]["pos"][1] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+
+
 
             ### COLLISIONS ###
 
@@ -1479,7 +1448,7 @@ def main():
 
 
 
-            # Changes player position by playerDelta
+
             players[clientPlayerID]["pos"] = [players[clientPlayerID]["pos"][0] + playerDelta[0], players[clientPlayerID]["pos"][1] + playerDelta[1]]
 
 
@@ -1490,38 +1459,44 @@ def main():
             ####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
 
             if time.time() - serverComTime > 1 / serverComFrequency:
-                sock.send(bytes("|0," + str(clientPlayerID) + "," + simplePlayer(players[clientPlayerID]) + "|", "ascii"))
+                sock.send(bytes("|0," + str(time.time()) + "," + str(clientPlayerID) + "," + simplePlayer(players[clientPlayerID]) + "|", "ascii"))
 
-                print(dataQueue.qsize())
-                
                 for item in range(dataQueue.qsize()):
                     serverData.append(dataQueue.get())
                     dataQueue.task_done()
-                
+
                 serverData = "".join(serverData)
 
                 serverData = serverData.split("|")
 
-                for packet in serverData:
-                    if packet == '':
-                        serverData.remove(packet)
-                        continue
-                    elif packet[0] =="0":
-                        packet = packet[2:]
-                        packet = packet = packet.split("*")
+                for packet in range(len(serverData)):
+                    serverData[packet] = serverData[packet].strip()
 
-                        for player in packet:
+                    if serverData[packet] == '':
+                        continue
+                    elif serverData[packet][0] =="0":
+                        serverData[packet] = serverData[packet][2:]
+                        serverData[packet] = serverData[packet].split("*")
+
+                        for player in serverData[packet]:
                             if player == "":
                                 continue
-                            
+
                             player = player.split(",")
+
+                            if len(player) < 7:
+                                break
+
                             if int(player[0]) == clientPlayerID:
                                 continue
                             else:
-                                players[int(player[0])] = complicatePlayerArray(player[1:])
+                                try:
+                                    players[int(player[0])] = complicatePlayerArray(player[1:])
+                                except:
+                                    print(player[1:])
 
                 serverData = []
-                
+
                 serverComTime = time.time()
 
 
@@ -1588,7 +1563,7 @@ def main():
                 #///CAUTION///CAUTION///CAUTION///CAUTION
                 previousZoom = cameraZoom# DO NOT TOUCH
                 #///CAUTION///CAUTION///CAUTION///CAUTION
-                                        
+
 
                 for column in range(int(cameraPos[0] - (cameraZoom / 2)) - 1, int(cameraPos[0] + (cameraZoom / 2)) + 1): # Scans accross the world area of the world visible to the camera in columns
                     if column < 0 or column >= worldSize[0]: # If the column is outside of the world, continue, because that would crash the program.
@@ -1793,4 +1768,3 @@ def main():
     pygame.quit()
 
 main()
-
