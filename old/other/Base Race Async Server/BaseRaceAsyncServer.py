@@ -29,6 +29,7 @@ def handleConnections(sendQueue, dataQueue, port):
             # Received a connect to the server (listening) socket
             if sock == srvSocket:
                 descriptors.append(sock.accept()[0])
+                print("Got client")
 
             else:
                 try:
@@ -54,7 +55,6 @@ def handleConnections(sendQueue, dataQueue, port):
                     try:
                         sock.send(sendData[item])
                     except:
-                        print("o shit")
                         continue
 
         sendData = []
@@ -148,7 +148,7 @@ def main():
 
     playerInUpdates = False
 
-    serverComFrequency = 120
+    serverComFrequency = 30
 
     lastComtime = time.time()
 

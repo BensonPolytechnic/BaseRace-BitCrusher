@@ -75,6 +75,10 @@ def simplePlayer(player):
                 simpleArray[6] = "1"
             else:
                 simpleArray[6] = "0"
+        
+        elif key == "delta":
+            simpleArray[7] = str(player["delta"][0])
+            simpleArray[8] = str(player["delta"][1])
 
     return ",".join(simpleArray)
 
@@ -96,6 +100,8 @@ def complicatePlayerArray(simpleArray):
         playerArray["rotation"] = toSlope(float(simpleArray[3]))
 
         playerArray["isShooting"] = bool(int(simpleArray[6]))
+        
+        playerArray["delta"] = [float(simpleArray[7]), float(simpleArray[8])]
 
     return playerArray
 
@@ -991,9 +997,6 @@ def main():
     global playerRadius
     playerRadius = int(scrW / (2 * cameraZoom))
 
-    # Vector to change the player's position by.
-    playerDelta = [0.0, 0.0]
-
     # Speed of all of the players.
     playerSpeed = 0.01
 
@@ -1336,160 +1339,162 @@ def main():
             if (inputSet[0] != inputSet[1]) and (inputSet[2] != inputSet[3]): # This checks if up OR down, and left OR right are being pressed, to see if the player should be moved diagonally.
                 if inputSet[0] == 1: # This checks if up is being pressed.
 
-                    if inputSet[2] == 1: # This checks if left is being pressed
-                        playerDelta = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1)] # Move the player diagonally up and left.
+                  if inputSet[2] == 1: # This checks if left is being pressed
+                      players[clientPlayerID]["delta"] = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1)] # Move the player diagonally up and left.
 
-                    else: # Because we already know that left is NOT being pressed at this point, and that up IS being pressed, we already know to move the player up and right.
-                        playerDelta = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1)] # Move the player diagonally up and right.
+                  else: # Because we already know that left is NOT being pressed at this point, and that up IS being pressed, we already know to move the player up and right.
+                      players[clientPlayerID]["delta"] = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1)] # Move the player diagonally up and right.
 
                 else: #If down is NOT being pressed:
 
-                    if inputSet[2] == 1: # Check if right is being pressed
-                        playerDelta = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2)] # Move the player diagonally down and left.
+                  if inputSet[2] == 1: # Check if right is being pressed
+                      players[clientPlayerID]["delta"] = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2)] # Move the player diagonally down and left.
 
-                    else: # The only possible other option is down and left being pressed.
-                        playerDelta = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2)] # Move the player diagonally down and right.
+                  else: # The only possible other option is down and left being pressed.
+                      players[clientPlayerID]["delta"] = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2)] # Move the player diagonally down and right.
 
             else: # If the player is NOT pressing diagonally:
 
-                if inputSet[0] == 1 or inputSet[1] == 1: # Check if the player is pressing up or down
+              if inputSet[0] == 1 or inputSet[1] == 1: # Check if the player is pressing up or down
 
-                    if inputSet[0] == inputSet[1]: # If the player is pressing up AND down, the inputs cancel out and the player does not move.
-                        playerDelta[1] = 0 # Don't move the player vertically.
+                  if inputSet[0] == inputSet[1]: # If the player is pressing up AND down, the inputs cancel out and the player does not move.
+                      players[clientPlayerID]["delta"][1] = 0 # Don't move the player vertically.
 
-                    elif inputSet[0] == 1: # Check if the player is ONLY pressing up
-                        playerDelta[1] =  -(t.get_time() * playerSpeed) # Move the player vertically up. This is negative because of the grid system being dumb.
+                  elif inputSet[0] == 1: # Check if the player is ONLY pressing up
+                      players[clientPlayerID]["delta"][1] =  -(t.get_time() * playerSpeed) # Move the player vertically up. This is negative because of the grid system being dumb.
 
-                    else: # If up OR down are being pressed, and down is NOT being pressed, we know to move the player vertically down
-                        playerDelta[1] = (t.get_time() * playerSpeed) # Move the player vertically down. This is positive because of the grid system being dumb.
+                  else: # If up OR down are being pressed, and down is NOT being pressed, we know to move the player vertically down
+                      players[clientPlayerID]["delta"][1] = (t.get_time() * playerSpeed) # Move the player vertically down. This is positive because of the grid system being dumb.
 
-                else: # If neither up nor down are being pressed, don't move the player vertically.
-                    playerDelta[1] = 0 # Don't move the player vertically.
+              else: # If neither up nor down are being pressed, don't move the player vertically.
+                  players[clientPlayerID]["delta"][1] = 0 # Don't move the player vertically.
 
-                if inputSet[2] == 1 or inputSet[3] == 1: # Check if the player is pressing left or right
+              if inputSet[2] == 1 or inputSet[3] == 1: # Check if the player is pressing left or right
 
-                    if inputSet[2] == inputSet[3]: # If the player is pressing left AND right, the inputs cancel out and the player does not move.
-                        playerDelta[0] = 0 # Don't move the player horizontally.
+                  if inputSet[2] == inputSet[3]: # If the player is pressing left AND right, the inputs cancel out and the player does not move.
+                      players[clientPlayerID]["delta"][0] = 0 # Don't move the player horizontally.
 
-                    elif inputSet[2] == 1: # Check if the player is ONLY pressing left
-                        playerDelta[0] =  -(t.get_time() * playerSpeed) # Move the player horizontally left.
+                  elif inputSet[2] == 1: # Check if the player is ONLY pressing left
+                      players[clientPlayerID]["delta"][0] =  -(t.get_time() * playerSpeed) # Move the player horizontally left.
 
-                    else: # If left OR right are being pressed, and left is NOT being pressed, we know to move the player horizontally right.
-                        playerDelta[0] = (t.get_time() * playerSpeed) # Move the player horizontally right.
+                  else: # If left OR right are being pressed, and left is NOT being pressed, we know to move the player horizontally right.
+                      players[clientPlayerID]["delta"][0] = (t.get_time() * playerSpeed) # Move the player horizontally right.
 
-                else: # If neither left NOR right are being pressed, don't move the player vertically.
-                    playerDelta[0] = 0 # Don't move the player horizontally.
+              else: # If neither left NOR right are being pressed, don't move the player vertically.
+                  players[clientPlayerID]["delta"][0] = 0 # Don't move the player horizontally.
+
 
 
             # Makes sure the player does not go outside the world by checking if incrementing the player's position by
             # playerDelta would put it outside of the world.
             # Rather than just setting playerDelta to 0, it makes it so the player *perfectly* squishes up against the side of the world,
             # so we can maintain delicious pixel-perfectness
-            if playerDelta[0] + players[clientPlayerID]["pos"][0] < 0.5: # Check if the player will go outside the right edge
-                playerDelta[0] = -(players[clientPlayerID]["pos"][0] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+            if players[clientPlayerID]["delta"][0] + players[clientPlayerID]["pos"][0] < 0.5: # Check if the player will go outside the right edge
+                players[clientPlayerID]["delta"][0] = -(players[clientPlayerID]["pos"][0] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
 
-            elif playerDelta[0] + players[clientPlayerID]["pos"][0] > worldSize[0] - 0.5: # Check if the player will go outside the left edge
-                playerDelta[0] = (worldSize[0] - 0.5) - players[clientPlayerID]["pos"][0] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+            elif players[clientPlayerID]["delta"][0] + players[clientPlayerID]["pos"][0] > worldSize[0] - 0.5: # Check if the player will go outside the left edge
+                players[clientPlayerID]["delta"][0] = (worldSize[0] - 0.5) - players[clientPlayerID]["pos"][0] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
 
-            if playerDelta[1] + players[clientPlayerID]["pos"][1] > worldSize[1] - 0.5: # Check if the player will go outside the bottom edge
-                playerDelta[1] = (worldSize[1] - 0.5) - players[clientPlayerID]["pos"][1] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+            if players[clientPlayerID]["delta"][1] + players[clientPlayerID]["pos"][1] > worldSize[1] - 0.5: # Check if the player will go outside the bottom edge
+                players[clientPlayerID]["delta"][1] = (worldSize[1] - 0.5) - players[clientPlayerID]["pos"][1] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
 
-            elif playerDelta[1] + players[clientPlayerID]["pos"][1] < 0.5: # Check if the player will go outside the top edge
-                playerDelta[1] = -(players[clientPlayerID]["pos"][1] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+            elif players[clientPlayerID]["delta"][1] + players[clientPlayerID]["pos"][1] < 0.5: # Check if the player will go outside the top edge
+                players[clientPlayerID]["delta"][1] = -(players[clientPlayerID]["pos"][1] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
 
 
 
             ### COLLISIONS ###
+            for player in range(len(players)):
 
-            preArcPos = [0, 0]
+                preArcPos = [0, 0]
 
-            nextPlayerPos = [players[clientPlayerID]["pos"][0] + playerDelta[0], players[clientPlayerID]["pos"][1] + playerDelta[1]]
+                nextPlayerPos = [players[player]["pos"][0] + players[player]["delta"][0], players[player]["pos"][1] + players[player]["delta"][1]]
 
-            pointPos = [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]
+                pointPos = [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]
 
-            collideRange = [[int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]]
+                collideRange = [[int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]]
 
-            magnitude = math.sqrt(math.pow(playerDelta[0], 2) + math.pow(playerDelta[1], 2))
-
-
-            for block in enumerate(collideRange):
-                if block[1][0] < 0 or block[1][0] >= worldSize[0]:
-                    collideRange[block[0]] = "EOW"
-
-                if block[1][1] < 0 or block[1][1] >= worldSize[1]:
-                    collideRange[block[0]] = "EOW"
+                magnitude = math.sqrt(math.pow(players[player]["delta"][0], 2) + math.pow(players[player]["delta"][1], 2))
 
 
-            for block in collideRange:
-                if block == "EOW":
-                    continue
+                for block in enumerate(collideRange):
+                  if block[1][0] < 0 or block[1][0] >= worldSize[0]:
+                      collideRange[block[0]] = "EOW"
 
-                if blockData[world[block[0]][block[1]]["type"]]["collidable"]:
-
-                    if math.sqrt(math.pow(nextPlayerPos[0] - pointPos[0], 2) + math.pow(nextPlayerPos[1] - pointPos[1], 2)) < 0.45:
-
-                        if playerDelta[0] == 0:
-                            if math.sqrt(math.pow(nextPlayerPos[0] - preArcPos[0], 2) + math.pow(nextPlayerPos[1] - (pointPos[1] + math.sqrt(0.2025 - math.pow(players[clientPlayerID]["pos"][0] - pointPos[0], 2))), 2)) > math.sqrt(math.pow(nextPlayerPos[0] - preArcPos[0], 2) + math.pow(nextPlayerPos[1] - (pointPos[1] - math.sqrt(0.2025 - math.pow(players[clientPlayerID]["pos"][0] - pointPos[0], 2))), 2)):
-                                preArcPos[0] = players[clientPlayerID]["pos"][0]
-                                preArcPos[1] = pointPos[1] - math.sqrt(0.2025 - math.pow(players[clientPlayerID]["pos"][0] - pointPos[0], 2))
-                            else:
-                                preArcPos[0] = players[clientPlayerID]["pos"][0]
-                                preArcPos[1] = pointPos[1] + math.sqrt(0.2025 - math.pow(players[clientPlayerID]["pos"][0] - pointPos[0], 2))
-
-                        else:
-                            m = playerDelta[1] / playerDelta[0]
-                            b = nextPlayerPos[1] - m * nextPlayerPos[0]
-
-                            xPoints = quadraticSolutions(math.pow(m, 2) + 1, 2 * m * b - 2 * m * pointPos[1] - 2 * pointPos[0], math.pow(pointPos[0], 2) + math.pow(b, 2) + math.pow(pointPos[1], 2) - (2 * b * pointPos[1]) - 0.2025)
-
-                            if math.sqrt(math.pow((nextPlayerPos[0] - xPoints[0]), 2) + math.pow((nextPlayerPos[1] - (m * xPoints[0] + b)), 2)) < math.sqrt(math.pow((nextPlayerPos[0] - xPoints[1]), 2) + math.pow((nextPlayerPos[1] - (m * xPoints[1] + b)), 2)):
-                                preArcPos = [xPoints[0], m * xPoints[0] + b]
-                            else:
-                                preArcPos = [xPoints[1], m * xPoints[1] + b]
-
-                        if (nextPlayerPos[0] - pointPos[0]) != 0:
-                            if block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]:
-                                collideAngle = math.atan(((nextPlayerPos[1] - pointPos[1])) / ((nextPlayerPos[0] - pointPos[0])))
-                                players[clientPlayerID]["pos"] = preArcPos
-                                playerDelta = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
-
-                            elif block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)]:
-                                collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / ((nextPlayerPos[0] - pointPos[0])))
-                                players[clientPlayerID]["pos"] = preArcPos
-                                playerDelta = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
-
-                            elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)]:
-                                collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
-                                players[clientPlayerID]["pos"] = preArcPos
-                                playerDelta = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
-
-                            elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]:
-                                collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
-                                players[clientPlayerID]["pos"] = preArcPos
-                                playerDelta = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
+                  if block[1][1] < 0 or block[1][1] >= worldSize[1]:
+                      collideRange[block[0]] = "EOW"
 
 
+                for block in collideRange:
+                  if block == "EOW":
+                      continue
 
-                    if players[clientPlayerID]["pos"][0] >= block[0] - 0.05 and players[clientPlayerID]["pos"][0] <= block[0] + 1.05:
-                        if block[1] - players[clientPlayerID]["pos"][1] <= 0:
-                            playerDelta[1] = block[1] - (players[clientPlayerID]["pos"][1] + 0.5) + 2
+                  if blockData[world[block[0]][block[1]]["type"]]["collidable"]:
 
-                        else:
-                            playerDelta[1] = block[1] - (players[clientPlayerID]["pos"][1] + 0.5)
+                      if math.sqrt(math.pow(nextPlayerPos[0] - pointPos[0], 2) + math.pow(nextPlayerPos[1] - pointPos[1], 2)) < 0.45:
+
+                          if players[player]["delta"][0] == 0:
+                              if math.sqrt(math.pow(nextPlayerPos[0] - preArcPos[0], 2) + math.pow(nextPlayerPos[1] - (pointPos[1] + math.sqrt(0.2025 - math.pow(players[player]["pos"][0] - pointPos[0], 2))), 2)) > math.sqrt(math.pow(nextPlayerPos[0] - preArcPos[0], 2) + math.pow(nextPlayerPos[1] - (pointPos[1] - math.sqrt(0.2025 - math.pow(players[player]["pos"][0] - pointPos[0], 2))), 2)):
+                                  preArcPos[0] = players[player]["pos"][0]
+                                  preArcPos[1] = pointPos[1] - math.sqrt(0.2025 - math.pow(players[player]["pos"][0] - pointPos[0], 2))
+                              else:
+                                  preArcPos[0] = players[player]["pos"][0]
+                                  preArcPos[1] = pointPos[1] + math.sqrt(0.2025 - math.pow(players[player]["pos"][0] - pointPos[0], 2))
+
+                          else:
+                              m = players[player]["delta"][1] / players[player]["delta"][0]
+                              b = nextPlayerPos[1] - m * nextPlayerPos[0]
+
+                              xPoints = quadraticSolutions(math.pow(m, 2) + 1, 2 * m * b - 2 * m * pointPos[1] - 2 * pointPos[0], math.pow(pointPos[0], 2) + math.pow(b, 2) + math.pow(pointPos[1], 2) - (2 * b * pointPos[1]) - 0.2025)
+
+                              if math.sqrt(math.pow((nextPlayerPos[0] - xPoints[0]), 2) + math.pow((nextPlayerPos[1] - (m * xPoints[0] + b)), 2)) < math.sqrt(math.pow((nextPlayerPos[0] - xPoints[1]), 2) + math.pow((nextPlayerPos[1] - (m * xPoints[1] + b)), 2)):
+                                  preArcPos = [xPoints[0], m * xPoints[0] + b]
+                              else:
+                                  preArcPos = [xPoints[1], m * xPoints[1] + b]
+
+                          if (nextPlayerPos[0] - pointPos[0]) != 0:
+                              if block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]:
+                                  collideAngle = math.atan(((nextPlayerPos[1] - pointPos[1])) / ((nextPlayerPos[0] - pointPos[0])))
+                                  players[player]["pos"] = preArcPos
+                                  players[player]["delta"] = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
+
+                              elif block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)]:
+                                  collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / ((nextPlayerPos[0] - pointPos[0])))
+                                  players[player]["pos"] = preArcPos
+                                  players[player]["delta"] = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
+
+                              elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)]:
+                                  collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
+                                  players[player]["pos"] = preArcPos
+                                  players[player]["delta"] = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
+
+                              elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]:
+                                  collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
+                                  players[player]["pos"] = preArcPos
+                                  players[player]["delta"] = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
 
 
 
-                    if players[clientPlayerID]["pos"][1] >= block[1] - 0.05 and players[clientPlayerID]["pos"][1] <= block[1] + 1.05:
-                        if block[0] - players[clientPlayerID]["pos"][0] <= 0:
-                            playerDelta[0] = block[0] - (players[clientPlayerID]["pos"][0] + 0.5) + 2
+                      if players[player]["pos"][0] >= block[0] - 0.05 and players[player]["pos"][0] <= block[0] + 1.05:
+                          if block[1] - players[player]["pos"][1] <= 0:
+                              players[player]["delta"][1] = block[1] - (players[player]["pos"][1] + 0.5) + 2
 
-                        else:
-                            playerDelta[0] = block[0] - (players[clientPlayerID]["pos"][0] + 0.5)
-
-
+                          else:
+                              players[player]["delta"][1] = block[1] - (players[player]["pos"][1] + 0.5)
 
 
-            players[clientPlayerID]["pos"] = [players[clientPlayerID]["pos"][0] + playerDelta[0], players[clientPlayerID]["pos"][1] + playerDelta[1]]
+
+                      if players[player]["pos"][1] >= block[1] - 0.05 and players[player]["pos"][1] <= block[1] + 1.05:
+                          if block[0] - players[player]["pos"][0] <= 0:
+                              players[player]["delta"][0] = block[0] - (players[player]["pos"][0] + 0.5) + 2
+
+                          else:
+                              players[player]["delta"][0] = block[0] - (players[player]["pos"][0] + 0.5)
+
+
+
+            for player in range(len(players)):
+                players[player]["pos"] = [players[player]["pos"][0] + players[player]["delta"][0], players[player]["pos"][1] + players[player]["delta"][1]]
 
 
             # Changes camera position, with smoothness.
