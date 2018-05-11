@@ -45,11 +45,48 @@ def quadraticSolutions(a, b, c):
 # 4 - Health of the player (0-100)
 # 5 - Energy pf the player (0-100)
 # 6 - Whether the player is shooting (0 or 1)
+def simplifyPlayerArray(playerArray):
+    simpleArray = []
+
+    for player in range(len(playerArray)):
+        simpleArray.append([])
+
+        for key in playerArray[player]:
+            simpleArray[player].append(0)
+
+        simpleArray[player].append(0)
+
+        for key in playerArray[player]:
+            if key == "team":
+                simpleArray[player][0] = playerArray[player]["team"]
+
+            elif key == "pos":
+                simpleArray[player][1] = int(playerArray[player]["pos"][0] * 100)
+
+                simpleArray[player][2] = int(playerArray[player]["pos"][1] * 100)
+
+            elif key == "rotation":
+                simpleArray[player][3] = int(toDeg(playerArray[player]["rotation"]))
+
+            elif key == "health":
+                simpleArray[player][4] = int(playerArray[player]["health"])
+
+            elif key == "energy":
+                simpleArray[player][5] = int(playerArray[player]["energy"])
+
+            elif "isShooting":
+                if playerArray[player]["isShooting"]:
+                    simpleArray[player][6] = 1
+
+                else:
+                    simpleArray[player][6] = 0
+
+    return simpleArray
 
 def simplePlayer(player):
     simpleArray = []
 
-    for i in range(9):
+    for i in range(7):
         simpleArray.append("0")
 
     for key in player:
@@ -70,7 +107,6 @@ def simplePlayer(player):
             simpleArray[5] = str(int(player["energy"]))
 
         elif key == "isShooting":
-
             if player["isShooting"]:
                 simpleArray[6] = "1"
             else:
@@ -93,7 +129,7 @@ def complicatePlayerArray(simpleArray):
 
         playerArray["energy"] = int(simpleArray[5])
 
-        playerArray["rotation"] = toSlope(float(simpleArray[3]))
+        playerArray["rotation"] = toSlope(int(simpleArray[3]))
 
         playerArray["isShooting"] = bool(int(simpleArray[6]))
 
@@ -541,6 +577,8 @@ def main():
             serverPort = int(serverPort)
             break
 
+
+
     global scrW # Width of the screen
 
     global scrH # Height of he screen
@@ -654,13 +692,13 @@ def main():
 ##        window = pygame.display.set_mode((scrW, scrH), FULLSCREEN | HWSURFACE | DOUBLEBUF)
 
         # Gets the width of the screen in pixels.
-        scrW = pygame.display.Info().current_w
+        scrW = pygame.display.Info().current_w // 2
 
         # Gets the height of the screen in pixels.
-        scrH = pygame.display.Info().current_h
+        scrH = pygame.display.Info().current_h // 2
 
         # Sets the display mode.
-        window = pygame.display.set_mode((scrW, scrH), FULLSCREEN | HWSURFACE | DOUBLEBUF)
+        window = pygame.display.set_mode((scrW, scrH))
 
         pygame.event.get()
 
@@ -719,6 +757,11 @@ def main():
 
 
         # Rotates some of the blocks in the top-left corner of the world to test block rotation.
+        world[0][0]["rotation"] = 1
+        world[1][0]["rotation"] = 2
+        world[2][0]["rotation"] = 3
+        world[3][0]["rotation"] = 2
+        world[4][0]["rotation"] = 1
 
 
         # boop
@@ -898,6 +941,9 @@ def main():
     # Target scroll, as a list index, that the inventory is moving to.
     targetScroll = 0
 
+    # Whether or not the inventory is being displayed.
+    dispInventory = True
+
     #List indexes in the inventory are arbitrary.
     # 0 - Block ID
     # 1 - Amount owned
@@ -914,7 +960,7 @@ def main():
     # Adds all of the placeable blocks to the player inventory.
     for block in range(len(blockData)):
         if blockData[block]["placeable"]:
-            playerInventory.append(block)
+            playerInventory.append([block, 16])
 
             inventorySpriteHeight += 1
 
@@ -924,7 +970,7 @@ def main():
 
     # Puts block sprites on top of the player inventory sprite.
     for sprite in range(len(playerInventory)):
-        inventorySprite.blit(blockData[playerInventory[sprite]]["sprites"][0][0], [0, blockData[0]["sprites"][0][0].get_height() * sprite])
+        inventorySprite.blit(blockData[playerInventory[sprite][0]]["sprites"][0][0], [0, blockData[0]["sprites"][0][0].get_height() * sprite])
 
     # Lowest scroll, in pixels, than the inventory sprite can be blitted to.
     minScroll = scrH / 2 + inventorySelection.get_height() / 2 - (len(playerInventory) * inventorySelection.get_height()) + scrW / 16
@@ -970,19 +1016,6 @@ def main():
     global teams
     teams = [{"color":[0, 128, 255]}, {"color":[255, 128, 0]}]
 
-    # Wiring data between blocks
-    # [[0, 1],[0,0], 0/1]
-    global wiring
-    wiring = []
-    # 3 numbers designating
-    # 0: input or output 0/1
-    # 1: x pos of block
-    # 2: y pos of block
-    heldWire = None
-
-    # 0 for OFF color, 1 for ON color
-    wireStates = [(128, 128, 0),(255, 255, 0)]
-
     # Players. Each player is a dictionary that contains the following values:
     # team - Integer value that correspons to the index of the list 'teams'. Used to determine what color the player should be and if their laser should be able to hit other players.
     # health - Value between 0 and 100 that reprisents how much health a player has.
@@ -991,7 +1024,7 @@ def main():
     # rotation - A list containing a slope and direction.
     # isShooting - Whether or not the player is shooting.
     global players
-    players = [{"team":0, "health":100, "pos":[16.0, 16.0], "energy":100, "rotation":[0, 0], "isShooting":False, "delta":[0.0, 0.0]}, {"team":0, "health":100, "pos":[12.0, 4.0], "energy":100, "rotation":[-0.5, 1], "isShooting":False, "delta":[0.0, 0.0]}, {"team":1, "health":100, "pos":[18.0, 29.0], "energy":100, "rotation":[5.1, 1], "isShooting":False, "delta":[0.0, 0.0]}, {"team":1, "health":100, "pos":[18.0, 27.0], "energy":100, "rotation":[2.3, -1], "isShooting":True, "delta":[0.0, 0.0]}]
+    players = [{"team":0, "health":100, "pos":[16.0, 16.0], "energy":100, "rotation":[0, 0], "isShooting":False}, {"team":0, "health":100, "pos":[12.0, 4.0], "energy":100, "rotation":[-0.5, 1], "isShooting":False}, {"team":1, "health":100, "pos":[18.0, 29.0], "energy":100, "rotation":[5.1, 1], "isShooting":False}, {"team":1, "health":100, "pos":[18.0, 27.0], "energy":100, "rotation":[2.3, -1], "isShooting":True}]
 
     # Radius of the player's body
     global playerRadius
@@ -1055,13 +1088,15 @@ def main():
 
     fpsCounter = pygame.time.Clock()
 
+    print(blockData)
+
     pygame.mixer.music.play(-1)
 
     lineOfSight = True
 
     dataQueue = queue.Queue(128)
 
-    serverComFrequency = 60
+    serverComFrequency = 30
 
     serverComTime = time.time()
 
@@ -1070,16 +1105,6 @@ def main():
     connectionHandler.start()
 
     serverData = []
-
-    pendingBlockUpdates = []
-
-    blockUpdates = []
-
-    denyBlockPlacement = False
-
-    disallowPlacementFlag = False
-
-    uiState = "normal"
 
     while not gameExit:
         if gameState == "credits":
@@ -1229,11 +1254,8 @@ def main():
                     elif event.key == K_f:
                         cameraZoom = 16
 
-                    elif event.key == K_q:
-                        if uiState == 'wire':
-                            uiState = None
-                        else:
-                            uiState = 'wire'
+                    elif event.key == K_t:
+                        cutscene(cameraPos, [16.0, 16.0], cameraZoom, 16, 2, 1)
 
                 elif event.type == KEYUP:
 
@@ -1251,11 +1273,10 @@ def main():
                         inputSet[1] = 0
 
                     elif event.key == K_e:
-                        if uiState == "inventory":
-                            uiState = "normal"
+                        if dispInventory:
+                            dispInventory = False
                         else:
-                            uiState = "inventory"
-                            heldWire = None
+                            dispInventory = True
 
                 elif event.type == MOUSEBUTTONDOWN:
 
@@ -1267,11 +1288,11 @@ def main():
                         inputSet[5] = 1
 
                     elif event.button == 4:
-                        if targetScroll > 0 and uiState == "inventory":
+                        if targetScroll > 0 and dispInventory:
                             targetScroll -= 1
 
                     elif event.button == 5:
-                        if targetScroll < len(playerInventory) - 1 and uiState == "inventory":
+                        if targetScroll < len(playerInventory) - 1 and dispInventory:
                             targetScroll += 1
 
                 elif event.type == MOUSEBUTTONUP:
@@ -1282,42 +1303,10 @@ def main():
                     elif event.button == 3: # Right click detection
                         inputSet[5] = 0
 
-            if uiState == "inventory":
-                spriteWorldPos = getWorldPos(mousePos)
-                spriteWorldPos = [int(spriteWorldPos[0]), int(spriteWorldPos[1])]
-
-                if spriteWorldPos[0] >= 0 and spriteWorldPos[0] < worldSize[0] and spriteWorldPos[1] >= 0 and spriteWorldPos[1] < worldSize[1]:
-                    denyBlockPlacement = False
-
-                    for player in players:
-                        if round(player["pos"][0], 1) == int(player["pos"][0]) + 0.5 and round(player["pos"][1], 1) == int(player["pos"][1]) + 0.5:
-                            if spriteWorldPos == [int(player["pos"][0]), int(player["pos"][1])]:
-                                denyBlockPlacement = True
-                                break
-
-                        elif spriteWorldPos in [[int(player["pos"][0] + 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] + 0.5), int(player["pos"][1] - 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] - 0.5)]]:
-                            denyBlockPlacement = True
-                            break
-
-
-
             # Checks if the mouse is being clicked, and makes the player start shooting if it is.
             if inputSet[4] == 1:
-                if uiState == "inventory":
-                    if spriteWorldPos[0] >= 0 and spriteWorldPos[0] < worldSize[0] and spriteWorldPos[1] >= 0 and spriteWorldPos[1] < worldSize[1]:
-                        if world[spriteWorldPos[0]][spriteWorldPos[1]]["type"] == 0 and not denyBlockPlacement:
-                            blockUpdate = [str(spriteWorldPos[0]), str(spriteWorldPos[1]), str(playerInventory[targetScroll]), "0", "0", str(blockData[playerInventory[targetScroll]]["health"])]
-                            if blockUpdate not in blockUpdates:
-                                disallowPlacementFlag = False
-
-                                for update in pendingBlockUpdates:
-                                    if [update[0], update[1]] == [blockUpdate[0], blockUpdate[1]]:
-                                        disallowPlacementFlag = True
-                                        break
-
-                                if not disallowPlacementFlag:
-                                    blockUpdates.append(blockUpdate)
-                                    pendingBlockUpdates.append([blockUpdate[0], blockUpdate[1], time.time()])
+                if dispInventory:
+                    pass
                     # Do a bunch of stuff to talk to the server
 
                 else:
@@ -1341,7 +1330,8 @@ def main():
 
 
 
-
+            # Based on what keys are being pressed (WSAD, or the first four values in inputSet, respectively),
+            # this changes playerDelta.
             if (inputSet[0] != inputSet[1]) and (inputSet[2] != inputSet[3]): # This checks if up OR down, and left OR right are being pressed, to see if the player should be moved diagonally.
                 if inputSet[0] == 1: # This checks if up is being pressed.
 
@@ -1405,8 +1395,6 @@ def main():
 
             elif playerDelta[1] + players[clientPlayerID]["pos"][1] < 0.5: # Check if the player will go outside the top edge
                 playerDelta[1] = -(players[clientPlayerID]["pos"][1] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
-
-
 
             ### COLLISIONS ###
 
@@ -1497,7 +1485,7 @@ def main():
 
 
 
-
+            # Changes player position by playerDelta
             players[clientPlayerID]["pos"] = [players[clientPlayerID]["pos"][0] + playerDelta[0], players[clientPlayerID]["pos"][1] + playerDelta[1]]
 
 
@@ -1506,43 +1494,37 @@ def main():
             cameraPos = [cameraPos[0] + ((((mousePos[0] - (scrW / 2)) / (scrW / cameraZoom)) / 200) + (players[clientPlayerID]["pos"][0] - cameraPos[0]) / 50) * (t.get_time() * 0.5), cameraPos[1] + ((((mousePos[1] - (scrH / 2)) / (scrW / cameraZoom)) / 200) + (players[clientPlayerID]["pos"][1] - cameraPos[1]) / 50) * (t.get_time() * 0.5)]
 
             ####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
+
             if time.time() - serverComTime > 1 / serverComFrequency:
-                # Updates player information
-                sock.send(bytes("|0," + str(time.time()) + "," + str(clientPlayerID) + "," + simplePlayer(players[clientPlayerID]) + "|", "ascii"))
-
-                # Sends block updates
-                for update in blockUpdates:
-                    sock.send(bytes("|1," + "," + ",".join(update) + "|", "ascii"))
-
-                blockUpdates = []
-
+                try:
+                    sock.send(bytes("|0," + str(clientPlayerID) + "," + simplePlayer(players[clientPlayerID]) + "|", "ascii"))
+                except:
+                    pass
 
                 for item in range(dataQueue.qsize()):
                     serverData.append(dataQueue.get())
                     dataQueue.task_done()
 
+                print(serverData)
+
                 serverData = "".join(serverData)
 
                 serverData = serverData.split("|")
 
-                for packet in range(len(serverData)):
-                    serverData[packet] = serverData[packet].strip()
-
-                    if serverData[packet] == '':
+                for packet in serverData:
+                    if packet == '':
+                        serverData.remove(packet)
                         continue
-                    elif serverData[packet][0] =="0":
-                        serverData[packet] = serverData[packet][2:]
-                        serverData[packet] = serverData[packet].split("*")
+                    elif packet[0] =="0":
+                        print(packet)
+                        packet = packet[2:]
+                        packet = packet = packet.split("*")
 
-                        for player in serverData[packet]:
+                        for player in packet:
                             if player == "":
                                 continue
 
                             player = player.split(",")
-
-                            if len(player) < 7:
-                                break
-
                             if int(player[0]) == clientPlayerID:
                                 continue
                             else:
@@ -1551,34 +1533,10 @@ def main():
                                 except:
                                     print(player[1:])
 
-                    elif serverData[packet][0] == "1":
-                        serverData[packet] = serverData[packet][2:]
-                        serverData[packet] = serverData[packet].split("*")
-
-                        for block in serverData[packet]:
-                            if block == "":
-                                continue
-
-                            block = block.split(",")
-
-                            if len(block) < 6:
-                                break
-
-                            for char in block:
-                                if char == '':
-                                    block.remove(char)
-
-                            world[int(block[0])][int(block[1])] = {"type":int(block[2]), "state":int(block[3]), "rotation":int(block[4]), "health":int(block[5])}
-
                 serverData = []
 
                 serverComTime = time.time()
 
-                serverComTime = time.time()
-
-            for update in pendingBlockUpdates:
-                if time.time() - update[2] > 0.25:
-                    pendingBlockUpdates.remove(update)
 
             # This the important thing.
             # It renders the section of the world that's visible to the camera.
@@ -1734,9 +1692,14 @@ def main():
 
                 spriteWorldPos = [int(spriteWorldPos[0]), int(spriteWorldPos[1])]
 
+                denyBlockPlacement = False
+
                 for player in players:
 
                     relPlayerPos = getScreenPos(player["pos"]) # Gets the relative position of the player on the screen
+
+                    if spriteWorldPos in [[int(player["pos"][0] + 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] + 0.5), int(player["pos"][1] - 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] - 0.5)]]:
+                        denyBlockPlacement = True
 
 
                     # This block is what displays players.
@@ -1781,7 +1744,7 @@ def main():
                 ### EVERYTHING PAST THIS POINT IS UI ###
 
 
-                if uiState == "inventory":
+                if dispInventory:
 
                     if denyBlockPlacement:
                         window.blit(blockSelectionSprites[1], getScreenPos(spriteWorldPos))
@@ -1799,39 +1762,17 @@ def main():
 
                     window.blit(inventorySprite, [(15 / 16) * scrW, inventoryScroll])
 
+
+                    for i in range(len(playerInventory)):
+                        window.blit(inventorySmallText.render(str(playerInventory[i][1]), 0, (0, 255, 0)), [(15 / 16) * scrW + 8, inventoryScroll + (i * defaultBlockWidth)])
+
                     window.blit(inventorySelection, [(15 / 16) * scrW, scrH / 2 + (scrW / 32)])
 
-                    currentName = inventorySmallText.render(str(" " + blockData[playerInventory[targetScroll]]["name"] + " "), 0, (0, 255, 0), (0, 0, 0))
+                    currentName = inventorySmallText.render(str(" " + blockData[targetScroll]["name"] + " "), 0, (0, 255, 0), (0, 0, 0))
 
 
                     window.blit(currentName, [(scrW * 15 / 16) - currentName.get_width() - 8, scrH / 2 + scrW / 32 + 30])
 
-                elif uiState == 'wire':
-                    # copied from world rendering
-                    for column in range(int(cameraPos[0] - (cameraZoom / 2)) - 1, int(cameraPos[0] + (cameraZoom / 2)) + 1): # Scans accross the world area of the world visible to the camera in columns
-                        if column < 0 or column >= worldSize[0]: # If the column is outside of the world, continue, because that would crash the program.
-                            continue
-                        else:
-                            for row in range(int(cameraPos[1] - ((cameraZoom * (scrH / scrW)) // 2)) - 1, int(cameraPos[1] + ((cameraZoom * (scrH / scrW)) // 2)) + 2): # Scans accross the world area of the world visible to the camera in rows
-                                if row < 0 or row >= worldSize[1]: # If the row is outside of the world, continue, because that would crash the program.
-                                    continue
-
-                                # checks if block is a logic block
-                                if world[column][row]["type"] > 3:
-                                    pygame.draw.circle(window, (26, 117, 255), (int(scrW / 2 - (cameraPos[0] - column) * (scrW / cameraZoom)  + blockData[world[column][row]["type"]]["outPos"] * (scrW / cameraZoom)), int(scrH / 2 - (cameraPos[1] - row) * (scrW / cameraZoom))), 10)
-                                    pygame.draw.circle(window, (255, 153, 51), (int(scrW / 2 - (cameraPos[0] - column) * (scrW / cameraZoom)  + blockData[world[column][row]["type"]]["inPos1"] * (scrW / cameraZoom)), int(scrH / 2 - (cameraPos[1] - row - 1) * (scrW / cameraZoom))), 10)
-                                    if blockData[world[column][row]["type"]]["inPos2"] != False:
-                                        pygame.draw.circle(window, (255, 153, 51), (int(scrW / 2 - (cameraPos[0] - column) * (scrW / cameraZoom)  + blockData[world[column][row]["type"]]["inPos2"] * (scrW / cameraZoom)), int(scrH / 2 - (cameraPos[1] - row - 1) * (scrW / cameraZoom))), 10)
-
-                                    # checks if the wire is rendered on screen
-                                    wiring = [[[0, 0], [1, 0], 1]]
-                                    for wire in wiring:
-                                        if (wire[0][0] == column and wire[0][1] == row) or (wire[1][0] == column and wire[1][1] == row):
-                                            inputX = int(scrW / 2 - (cameraPos[0] - wire[0][0]) * (scrW / cameraZoom) + blockData[world[wire[0][0]][wire[0][1]]["type"]]["inPos" + str(wire[2] + 1)] * (scrW / cameraZoom))
-                                            inputY = int(scrH / 2 - (cameraPos[1] - wire[0][1] - 1) * (scrW / cameraZoom))
-                                            outputX = int(scrW / 2 - (cameraPos[0] - wire[1][0]) * (scrW / cameraZoom) + blockData[world[wire[1][0]][wire[1][1]]["type"]]["outPos"] * (scrW / cameraZoom))
-                                            outputY = int(scrH / 2 - (cameraPos[1] - wire[1][1]) * (scrW / cameraZoom))
-                                            pygame.draw.line(window, wireStates[world[wire[0][0]][wire[0][1]]["state"]], (inputX, inputY), (outputX, outputY), 15)
 
                 # Draws health and energy bar borders.
                 pygame.draw.rect(window, [32, 255, 64], pygame.Rect(healthBarPos, statusBarDims), 2)
@@ -1863,6 +1804,5 @@ def main():
                 pygame.display.flip()
 
     pygame.quit()
-    sock.close()
 
 main()

@@ -3,19 +3,17 @@ import time, socket, threading, select, queue, os
 def handleConnections(sendQueue, dataQueue, port):
     srvSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    srvSocket.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
-
     #host = "127.0.0.1"
 
     host = ""
 
     srvSocket.bind((host, port))
 
+    print("Address: " + str(srvSocket.getsockname()))
+
     srvSocket.listen(4)
 
     sendData = []
-
-    cData = None
 
     descriptors = [srvSocket]
 
@@ -43,21 +41,16 @@ def handleConnections(sendQueue, dataQueue, port):
                 else:
                     dataQueue.put(data.decode('ascii'))
 
-        for item in range(sendQueue.qsize()):
-            cData = sendQueue.get()
-            sendQueue.task_done()
-            sendData.append(cData)
+            for item in range(sendQueue.qsize()):
+                sendData.append(sendQueue.get())
+                sendQueue.task_done()
 
-        for sock in descriptors:
-            for item in range(len(sendData)):
-                if sock != srvSocket:
-                    try:
-                        sock.send(sendData[item])
-                    except:
-                        print("o shit")
-                        continue
+            for sock in descriptors:
+                for item in sendData:
+                    if sock != srvSocket:
+                        sock.send(item)
 
-        sendData = []
+            sendData = []
 
 def importBlockData():
     blockInfo = [] # Stores lines of 'blockdata.txt'
@@ -144,13 +137,7 @@ def main():
 
     uniquePlayers = []
 
-    blockUpdates = []
-
     playerInUpdates = False
-
-    serverComFrequency = 120
-
-    lastComtime = time.time()
 
     while serverRunning:
         for item in range(dataQueue.qsize()):
@@ -161,79 +148,51 @@ def main():
             for packet in clientData:
                 packet = packet.split("|")
 
+                for item in range(len(packet)):
+                    if item == '':
+                        packet.remove(item)
+
+                print(packet)
+
                 for item in packet:
                     if item == '':
                         continue
-                    elif item[0] == "0":
+                    if item[0] == "0":
                         playerUpdates.append(item)
+                        print(item)
 
-                    elif item[0] == "1":
-                        blockUpdates.append(item)
+        if playerUpdates != []:
+            for update in playerUpdates:
+                update = update[1:]
 
-        if time.time() - lastComtime >= 1 / serverComFrequency:
-            lastComTime = time.time()
+                if uniquePlayers == []:
+                    uniquePlayers.append(update)
+                else:
+                    playerInUpdates = False
 
-            if blockUpdates != []:
-                for update in blockUpdates:
-                    if update == '':
-                        blockUpdates.remove(update)
+                    for player in uniquePlayers:
+                        if player[0] == update[0]:
+                            playerInUpdates = True
+                            break
 
-                for update in range(len(blockUpdates)):
-                    blockUpdates[update] = blockUpdates[update][2:]
-
-                blockUpdates = "*".join(blockUpdates)
-
-                blockUpdates = "|1," + blockUpdates + "|"
-
-                sendQueue.put(bytes(blockUpdates, "ascii"))
-
-                blockUpdates = []
-
-            if playerUpdates != []:
-                for update in playerUpdates:
-                    update = update[2:]
-                    update = update.split(",")
-
-                    if update == []:
-                        continue
-
-                    if uniquePlayers == []:
-                        update.pop(0)
+                    if not playerInUpdates:
                         uniquePlayers.append(update)
-                    else:
-                        playerInUpdates = False
 
-                        for player in uniquePlayers:
-                            if player[1] == update[1]:
-                                if float(player[0]) < float(update[0]):
-                                    playerInUpdates = True
-                                    break
+            playerUpdates = []
 
+            if uniquePlayers != []:
+                for update in uniquePlayers:
+                    update = ",".join(update)
 
-                        if not playerInUpdates:
-                            update.pop(0)
-                            uniquePlayers.append(update)
+                print(uniquePlayers)
 
-                playerUpdates = []
+                uniquePlayers = "*".join(uniquePlayers)
 
-                if uniquePlayers != []:
-                    for update in range(len(uniquePlayers)):
-                        uniquePlayers[update] = ",".join(uniquePlayers[update])
+                uniquePlayers = "|0," + uniquePlayers + "|"
 
-                    uniquePlayers = "*".join(uniquePlayers)
+                sendQueue.put(bytes(uniquePlayers, "ascii"))
 
-                    uniquePlayers = "|0," + uniquePlayers + "|"
-
-                    sendQueue.put(bytes(uniquePlayers, "ascii"))
-
-                    uniquePlayers = []
-
-
-
-
-
-        ########## AT VERY BOTTOM FOR THE LOVE OF FUCK
-        clientData = []
+                uniquePlayers = []
 
 
         # Do stuff

@@ -1,0 +1,6 @@
+0 - player
+1 - block
+2 - sequence
+	0 - start game
+	1 - start fight
+	2 - win/lose
