@@ -1,1 +1,0 @@
-this is a text file reminding me to put a string separator between packets when I get around to it because otherwise i'll probably forget and get excruciatingly enraged at not understanding why it's both sending and recieving garbage data from the server

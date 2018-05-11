@@ -3,6 +3,8 @@ import time, socket, threading, select, queue, os
 def handleConnections(sendQueue, dataQueue, port):
     srvSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+    srvSocket.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
+
     #host = "127.0.0.1"
 
     host = ""
@@ -138,6 +140,8 @@ def main():
 
     uniquePlayers = []
 
+    blockUpdates = []
+
     playerInUpdates = False
 
     serverComFrequency = 120
@@ -156,11 +160,30 @@ def main():
                 for item in packet:
                     if item == '':
                         continue
-                    if item[0] == "0":
+                    elif item[0] == "0":
                         playerUpdates.append(item)
+
+                    elif item[0] == "1":
+                        blockUpdates.append(item)
 
         if time.time() - lastComtime >= 1 / serverComFrequency:
             lastComTime = time.time()
+
+            if blockUpdates != []:
+                for update in blockUpdates:
+                    if update == '':
+                        blockUpdates.remove(update)
+
+                for update in range(len(blockUpdates)):
+                    blockUpdates[update] = blockUpdates[update][2:]
+
+                blockUpdates = "*".join(blockUpdates)
+
+                blockUpdates = "|1," + blockUpdates + "|"
+
+                sendQueue.put(bytes(blockUpdates, "ascii"))
+
+                blockUpdates = []
 
             if playerUpdates != []:
                 for update in playerUpdates:

@@ -905,9 +905,6 @@ def main():
     # Target scroll, as a list index, that the inventory is moving to.
     targetScroll = 0
 
-    # Whether or not the inventory is being displayed.
-    dispInventory = True
-
     #List indexes in the inventory are arbitrary.
     # 0 - Block ID
     # 1 - Amount owned
@@ -924,7 +921,7 @@ def main():
     # Adds all of the placeable blocks to the player inventory.
     for block in range(len(blockData)):
         if blockData[block]["placeable"]:
-            playerInventory.append([block, 16])
+            playerInventory.append(block)
 
             inventorySpriteHeight += 1
 
@@ -934,7 +931,7 @@ def main():
 
     # Puts block sprites on top of the player inventory sprite.
     for sprite in range(len(playerInventory)):
-        inventorySprite.blit(blockData[playerInventory[sprite][0]]["sprites"][0][0], [0, blockData[0]["sprites"][0][0].get_height() * sprite])
+        inventorySprite.blit(blockData[playerInventory[sprite]]["sprites"][0][0], [0, blockData[0]["sprites"][0][0].get_height() * sprite])
 
     # Lowest scroll, in pixels, than the inventory sprite can be blitted to.
     minScroll = scrH / 2 + inventorySelection.get_height() / 2 - (len(playerInventory) * inventorySelection.get_height()) + scrW / 16
@@ -1067,6 +1064,16 @@ def main():
     connectionHandler.start()
 
     serverData = []
+
+    pendingBlockUpdates = []
+
+    blockUpdates = []
+
+    denyBlockPlacement = False
+
+    disallowPlacementFlag = False
+
+    uiState = "normal"
 
     while not gameExit:
         if gameState == "credits":
@@ -1235,10 +1242,11 @@ def main():
                         inputSet[1] = 0
 
                     elif event.key == K_e:
-                        if dispInventory:
-                            dispInventory = False
+                        if uiState == "inventory":
+                            uiState = "normal"
                         else:
-                            dispInventory = True
+                            uiState = "inventory"
+                            heldWire = None
 
                 elif event.type == MOUSEBUTTONDOWN:
 
@@ -1250,11 +1258,11 @@ def main():
                         inputSet[5] = 1
 
                     elif event.button == 4:
-                        if targetScroll > 0 and dispInventory:
+                        if targetScroll > 0 and uiState == "inventory":
                             targetScroll -= 1
 
                     elif event.button == 5:
-                        if targetScroll < len(playerInventory) - 1 and dispInventory:
+                        if targetScroll < len(playerInventory) - 1 and uiState == "inventory":
                             targetScroll += 1
 
                 elif event.type == MOUSEBUTTONUP:
@@ -1265,10 +1273,37 @@ def main():
                     elif event.button == 3: # Right click detection
                         inputSet[5] = 0
 
+            if uiState == "inventory":
+                spriteWorldPos = getWorldPos(mousePos)
+                spriteWorldPos = [int(spriteWorldPos[0]), int(spriteWorldPos[1])]
+
+                if spriteWorldPos[0] >= 0 and spriteWorldPos[0] < worldSize[0] and spriteWorldPos[1] >= 0 and spriteWorldPos[1] < worldSize[1]:
+                    denyBlockPlacement = False
+
+                    for player in players:
+                        if spriteWorldPos in [[int(player["pos"][0] + 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] + 0.5), int(player["pos"][1] - 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] - 0.5)]]:
+                            denyBlockPlacement = True
+                            break
+                
+
+
             # Checks if the mouse is being clicked, and makes the player start shooting if it is.
             if inputSet[4] == 1:
-                if dispInventory:
-                    pass
+                if uiState == "inventory":
+                    if spriteWorldPos[0] >= 0 and spriteWorldPos[0] < worldSize[0] and spriteWorldPos[1] >= 0 and spriteWorldPos[1] < worldSize[1]:
+                        if world[spriteWorldPos[0]][spriteWorldPos[1]]["type"] == 0 and not denyBlockPlacement:
+                            blockUpdate = [str(spriteWorldPos[0]), str(spriteWorldPos[1]), str(targetScroll), "0", "0", str(blockData[targetScroll]["health"])]
+                            if blockUpdate not in blockUpdates:
+                                disallowPlacementFlag = False
+
+                                for update in pendingBlockUpdates:
+                                    if [update[0], update[1]] == [blockUpdate[0], blockUpdate[1]]:
+                                        disallowPlacementFlag = True
+                                        break
+
+                                if not disallowPlacementFlag:
+                                    blockUpdates.append(blockUpdate)
+                                    pendingBlockUpdates.append([blockUpdate[0], blockUpdate[1], time.time()])
                     # Do a bunch of stuff to talk to the server
 
                 else:
@@ -1292,7 +1327,7 @@ def main():
 
 
 
-            
+
             if (inputSet[0] != inputSet[1]) and (inputSet[2] != inputSet[3]): # This checks if up OR down, and left OR right are being pressed, to see if the player should be moved diagonally.
                 if inputSet[0] == 1: # This checks if up is being pressed.
 
@@ -1459,7 +1494,15 @@ def main():
             ####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
 
             if time.time() - serverComTime > 1 / serverComFrequency:
+                # Updates player information
                 sock.send(bytes("|0," + str(time.time()) + "," + str(clientPlayerID) + "," + simplePlayer(players[clientPlayerID]) + "|", "ascii"))
+
+                # Sends block updates
+                for update in blockUpdates:
+                    sock.send(bytes("|1," + "," + ",".join(update) + "|", "ascii"))
+
+                blockUpdates = []
+
 
                 for item in range(dataQueue.qsize()):
                     serverData.append(dataQueue.get())
@@ -1495,10 +1538,33 @@ def main():
                                 except:
                                     print(player[1:])
 
+                    elif serverData[packet][0] == "1":
+                        serverData[packet] = serverData[packet][2:]
+                        serverData[packet] = serverData[packet].split("*")
+
+                        for block in serverData[packet]:
+                            if block == "":
+                                continue
+
+                            block = block.split(",")
+
+                            if len(block) < 6:
+                                break
+
+                            for char in block:
+                                if char == '':
+                                    block.remove(char)
+
+                            world[int(block[0])][int(block[1])] = {"type":int(block[2]), "state":int(block[3]), "rotation":int(block[4]), "health":int(block[5])}
+
                 serverData = []
 
                 serverComTime = time.time()
 
+
+            for update in pendingBlockUpdates:
+                if update[2] + 0.25 - time.time() <= 0:
+                    pendingBlockUpdates.remove(update)
 
             # This the important thing.
             # It renders the section of the world that's visible to the camera.
@@ -1654,14 +1720,9 @@ def main():
 
                 spriteWorldPos = [int(spriteWorldPos[0]), int(spriteWorldPos[1])]
 
-                denyBlockPlacement = False
-
                 for player in players:
 
                     relPlayerPos = getScreenPos(player["pos"]) # Gets the relative position of the player on the screen
-
-                    if spriteWorldPos in [[int(player["pos"][0] + 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] + 0.5)], [int(player["pos"][0] + 0.5), int(player["pos"][1] - 0.5)], [int(player["pos"][0] - 0.5), int(player["pos"][1] - 0.5)]]:
-                        denyBlockPlacement = True
 
 
                     # This block is what displays players.
@@ -1706,7 +1767,7 @@ def main():
                 ### EVERYTHING PAST THIS POINT IS UI ###
 
 
-                if dispInventory:
+                if uiState == "inventory":
 
                     if denyBlockPlacement:
                         window.blit(blockSelectionSprites[1], getScreenPos(spriteWorldPos))
@@ -1724,13 +1785,9 @@ def main():
 
                     window.blit(inventorySprite, [(15 / 16) * scrW, inventoryScroll])
 
-
-                    for i in range(len(playerInventory)):
-                        window.blit(inventorySmallText.render(str(playerInventory[i][1]), 0, (0, 255, 0)), [(15 / 16) * scrW + 8, inventoryScroll + (i * defaultBlockWidth)])
-
                     window.blit(inventorySelection, [(15 / 16) * scrW, scrH / 2 + (scrW / 32)])
 
-                    currentName = inventorySmallText.render(str(" " + blockData[targetScroll]["name"] + " "), 0, (0, 255, 0), (0, 0, 0))
+                    currentName = inventorySmallText.render(str(" " + blockData[playerInventory[targetScroll]]["name"] + " "), 0, (0, 255, 0), (0, 0, 0))
 
 
                     window.blit(currentName, [(scrW * 15 / 16) - currentName.get_width() - 8, scrH / 2 + scrW / 32 + 30])
