@@ -36,41 +36,52 @@ str.name:Strong Block;
 bool.placeable:1;
 }
 
-
 {
 bool.collidable:1;
 int.health:1000;
-bool.rotatable:1;
+bool.rotatable:0;
 int.states:1;
 str.name:AND gate;
 bool.placeable:1;
+float.outPos:0.5;
+float.inPos1:0.33;
+float.inPos2:0.66;
 }
 
 {
 bool.collidable:1;
 int.health:1000;
-bool.rotatable:1;
+bool.rotatable:0;
 int.states:1;
 str.name:OR gate;
 bool.placeable:1;
+float.outPos:0.5;
+float.inPos1:0.33;
+float.inPos2:0.66;
 }
 
 {
 bool.collidable:1;
 int.health:1000;
-bool.rotatable:1;
+bool.rotatable:0;
 int.states:1;
 str.name:XOR gate;
 bool.placeable:1;
+float.outPos:0.5;
+float.inPos1:0.33;
+float.inPos2:0.66;
 }
 
 
 {
 bool.collidable:1;
 int.health:1000;
-bool.rotatable:1;
+bool.rotatable:0;
 int.states:1;
 str.name:NOT gate;
 bool.placeable:1;
+float.outPos:0.5;
+float.inPos1:0.5;
+bool.inPos2:0;
 }
 

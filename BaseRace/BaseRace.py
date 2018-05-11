@@ -541,8 +541,6 @@ def main():
             serverPort = int(serverPort)
             break
 
-
-
     global scrW # Width of the screen
 
     global scrH # Height of he screen
@@ -656,13 +654,13 @@ def main():
 ##        window = pygame.display.set_mode((scrW, scrH), FULLSCREEN | HWSURFACE | DOUBLEBUF)
 
         # Gets the width of the screen in pixels.
-        scrW = pygame.display.Info().current_w // 2
+        scrW = pygame.display.Info().current_w
 
         # Gets the height of the screen in pixels.
-        scrH = pygame.display.Info().current_h // 2
+        scrH = pygame.display.Info().current_h
 
         # Sets the display mode.
-        window = pygame.display.set_mode((scrW, scrH))
+        window = pygame.display.set_mode((scrW, scrH), FULLSCREEN | HWSURFACE | DOUBLEBUF)
 
         pygame.event.get()
 
@@ -721,11 +719,6 @@ def main():
 
 
         # Rotates some of the blocks in the top-left corner of the world to test block rotation.
-        world[0][0]["rotation"] = 1
-        world[1][0]["rotation"] = 2
-        world[2][0]["rotation"] = 3
-        world[3][0]["rotation"] = 2
-        world[4][0]["rotation"] = 1
 
 
         # boop
@@ -977,6 +970,19 @@ def main():
     global teams
     teams = [{"color":[0, 128, 255]}, {"color":[255, 128, 0]}]
 
+    # Wiring data between blocks
+    # [[0, 1],[0,0], 0/1]
+    global wiring
+    wiring = []
+    # 3 numbers designating
+    # 0: input or output 0/1
+    # 1: x pos of block
+    # 2: y pos of block
+    heldWire = None
+
+    # 0 for OFF color, 1 for ON color
+    wireStates = [(128, 128, 0),(255, 255, 0)]
+
     # Players. Each player is a dictionary that contains the following values:
     # team - Integer value that correspons to the index of the list 'teams'. Used to determine what color the player should be and if their laser should be able to hit other players.
     # health - Value between 0 and 100 that reprisents how much health a player has.
@@ -1223,8 +1229,11 @@ def main():
                     elif event.key == K_f:
                         cameraZoom = 16
 
-                    elif event.key == K_t:
-                        cutscene(cameraPos, [16.0, 16.0], cameraZoom, 16, 2, 1)
+                    elif event.key == K_q:
+                        if uiState == 'wire':
+                            uiState = None
+                        else:
+                            uiState = 'wire'
 
                 elif event.type == KEYUP:
 
@@ -1497,7 +1506,6 @@ def main():
             cameraPos = [cameraPos[0] + ((((mousePos[0] - (scrW / 2)) / (scrW / cameraZoom)) / 200) + (players[clientPlayerID]["pos"][0] - cameraPos[0]) / 50) * (t.get_time() * 0.5), cameraPos[1] + ((((mousePos[1] - (scrH / 2)) / (scrW / cameraZoom)) / 200) + (players[clientPlayerID]["pos"][1] - cameraPos[1]) / 50) * (t.get_time() * 0.5)]
 
             ####### SERVER STUFF YAYAYAYAYAYYZAYAAYAYAYAYAYYAYAYAYA
-
             if time.time() - serverComTime > 1 / serverComFrequency:
                 # Updates player information
                 sock.send(bytes("|0," + str(time.time()) + "," + str(clientPlayerID) + "," + simplePlayer(players[clientPlayerID]) + "|", "ascii"))
@@ -1566,6 +1574,7 @@ def main():
 
                 serverComTime = time.time()
 
+                serverComTime = time.time()
 
             for update in pendingBlockUpdates:
                 if time.time() - update[2] > 0.25:
@@ -1797,6 +1806,32 @@ def main():
 
                     window.blit(currentName, [(scrW * 15 / 16) - currentName.get_width() - 8, scrH / 2 + scrW / 32 + 30])
 
+                elif uiState == 'wire':
+                    # copied from world rendering
+                    for column in range(int(cameraPos[0] - (cameraZoom / 2)) - 1, int(cameraPos[0] + (cameraZoom / 2)) + 1): # Scans accross the world area of the world visible to the camera in columns
+                        if column < 0 or column >= worldSize[0]: # If the column is outside of the world, continue, because that would crash the program.
+                            continue
+                        else:
+                            for row in range(int(cameraPos[1] - ((cameraZoom * (scrH / scrW)) // 2)) - 1, int(cameraPos[1] + ((cameraZoom * (scrH / scrW)) // 2)) + 2): # Scans accross the world area of the world visible to the camera in rows
+                                if row < 0 or row >= worldSize[1]: # If the row is outside of the world, continue, because that would crash the program.
+                                    continue
+
+                                # checks if block is a logic block
+                                if world[column][row]["type"] > 3:
+                                    pygame.draw.circle(window, (26, 117, 255), (int(scrW / 2 - (cameraPos[0] - column) * (scrW / cameraZoom)  + blockData[world[column][row]["type"]]["outPos"] * (scrW / cameraZoom)), int(scrH / 2 - (cameraPos[1] - row) * (scrW / cameraZoom))), 10)
+                                    pygame.draw.circle(window, (255, 153, 51), (int(scrW / 2 - (cameraPos[0] - column) * (scrW / cameraZoom)  + blockData[world[column][row]["type"]]["inPos1"] * (scrW / cameraZoom)), int(scrH / 2 - (cameraPos[1] - row - 1) * (scrW / cameraZoom))), 10)
+                                    if blockData[world[column][row]["type"]]["inPos2"] != False:
+                                        pygame.draw.circle(window, (255, 153, 51), (int(scrW / 2 - (cameraPos[0] - column) * (scrW / cameraZoom)  + blockData[world[column][row]["type"]]["inPos2"] * (scrW / cameraZoom)), int(scrH / 2 - (cameraPos[1] - row - 1) * (scrW / cameraZoom))), 10)
+
+                                    # checks if the wire is rendered on screen
+                                    wiring = [[[0, 0], [1, 0], 1]]
+                                    for wire in wiring:
+                                        if (wire[0][0] == column and wire[0][1] == row) or (wire[1][0] == column and wire[1][1] == row):
+                                            inputX = int(scrW / 2 - (cameraPos[0] - wire[0][0]) * (scrW / cameraZoom) + blockData[world[wire[0][0]][wire[0][1]]["type"]]["inPos" + str(wire[2] + 1)] * (scrW / cameraZoom))
+                                            inputY = int(scrH / 2 - (cameraPos[1] - wire[0][1] - 1) * (scrW / cameraZoom))
+                                            outputX = int(scrW / 2 - (cameraPos[0] - wire[1][0]) * (scrW / cameraZoom) + blockData[world[wire[1][0]][wire[1][1]]["type"]]["outPos"] * (scrW / cameraZoom))
+                                            outputY = int(scrH / 2 - (cameraPos[1] - wire[1][1]) * (scrW / cameraZoom))
+                                            pygame.draw.line(window, wireStates[world[wire[0][0]][wire[0][1]]["state"]], (inputX, inputY), (outputX, outputY), 15)
 
                 # Draws health and energy bar borders.
                 pygame.draw.rect(window, [32, 255, 64], pygame.Rect(healthBarPos, statusBarDims), 2)
