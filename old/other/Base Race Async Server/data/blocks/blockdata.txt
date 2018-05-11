@@ -1,0 +1,76 @@
+{
+bool.collidable:0;
+int.health:0;
+bool.rotatable:0;
+int.states:1;
+str.name:Air;
+bool.placeable:0;
+}
+
+{
+bool.collidable:1;
+int.health:1000;
+bool.rotatable:0;
+int.states:1;
+str.name:Weak Block;
+bool.placeable:1;
+}
+
+
+{
+bool.collidable:1;
+int.health:1000;
+bool.rotatable:0;
+int.states:1;
+str.name:Medium Block;
+bool.placeable:1;
+}
+
+
+{
+bool.collidable:1;
+int.health:1000;
+bool.rotatable:0;
+int.states:1;
+str.name:Strong Block;
+bool.placeable:1;
+}
+
+
+{
+bool.collidable:1;
+int.health:1000;
+bool.rotatable:1;
+int.states:1;
+str.name:AND gate;
+bool.placeable:1;
+}
+
+{
+bool.collidable:1;
+int.health:1000;
+bool.rotatable:1;
+int.states:1;
+str.name:OR gate;
+bool.placeable:1;
+}
+
+{
+bool.collidable:1;
+int.health:1000;
+bool.rotatable:1;
+int.states:1;
+str.name:XOR gate;
+bool.placeable:1;
+}
+
+
+{
+bool.collidable:1;
+int.health:1000;
+bool.rotatable:1;
+int.states:1;
+str.name:NOT gate;
+bool.placeable:1;
+}
+
