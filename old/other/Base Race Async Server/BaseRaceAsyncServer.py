@@ -361,6 +361,24 @@ def simplePlayer(player):
 
     return ",".join(simpleArray)
 
+def toDeg(rotation):
+    if rotation[1] == 0:
+        if rotation[0] == "+inf":
+            return 90.0
+
+        else:
+            return 270.0
+
+    elif rotation[1] > 0:
+        if rotation[0] > 0:
+            return math.atan(rotation[0]) * (180 / math.pi)
+
+        else:
+            return (math.atan(rotation[0]) * (180 / math.pi)) + 360
+
+    elif rotation[1] < 0:
+        return math.atan(rotation[0]) * (180 / math.pi) + 180
+
 def importBlockData():
     blockInfo = [] # Stores lines of 'blockdata.txt'
 
@@ -466,6 +484,10 @@ def main():
     offloadedBlocks = []
 
     offloadedPlayers = []
+
+    blockCollision = None
+
+    playerCollision = None
 
     global players
 
@@ -702,20 +724,23 @@ def main():
                     blockCollision = raycast(players[player]["pos"], players[player]["rotation"][0], players[player]["rotation"][1], players[player]["team"])
                     playerCollision = hitscan(players[player]["pos"], players[player]["rotation"][0], players[player]["rotation"][1], players[player]["team"])
 
-                    if playerCollision == None and blockCollision != None:
-                        blockUpdates.append("1," + str(blockCollison[0]) + "," + str(blockCollision[1]) + "," + str(world[blockCollison[0]][blockCollison[1]]["type"]) + "," + str(world[blockCollison[0]][blockCollison[1]]["state"]) + "," + str(world[blockCollison[0]][blockCollison[1]]["rotation"]) + "," + str(world[blockCollison[0]][blockCollison[1]]["health"] - 50) + "," + str(world[blockCollison[0]][blockCollison[1]]["special"]))
+                    if playerCollision == None and blockCollision == None:
+                        continue
+
+                    elif playerCollision == None and blockCollision != None:
+                        blockUpdates.append("1," + str(blockCollision[0]) + "," + str(blockCollision[1]) + "," + str(world[blockCollision[0]][blockCollision[1]]["type"]) + "," + str(world[blockCollision[0]][blockCollision[1]]["state"]) + "," + str(world[blockCollision[0]][blockCollision[1]]["rotation"]) + "," + str(world[blockCollision[0]][blockCollision[1]]["health"] - 50) + "," + str(world[blockCollision[0]][blockCollision[1]]["special"]))
 
                     elif playerCollision != None and blockCollision == None:
-                        players[player]["health"] -= 5
-                        playerUpdates.append("0," + str(time.time()) + ",0," + simplePlayer(player))
+                        playerHitID = players.index(playerCollision)
+                        players[playerHitID]["health"] -= 0.5
+                        playerUpdates.append("0," + str(time.time()) + "," + str(playerHitID) + "," + simplePlayer(players[player]))
                     else:
-                        print()
                         if getDistance(players[player]["pos"], playerCollision["pos"]) <= getDistance(players[player]["pos"], blockCollision):
-                            players[player]["health"] -= 5
-                            playerUpdates.append("0," + str(time.time()) + ",0," + simplePlayer(player))
+                            playerHitID = players.index(playerCollision)
+                            players[playerHitID]["health"] -= 0.5
+                            playerUpdates.append("0," + str(time.time()) + "," + str(playerHitID) + "," + simplePlayer(players[player]))
                         else:
-                            blockUpdates.append("1," + str(blockCollison[0]) + "," + str(blockCollision[1]) + "," + str(world[blockCollison[0]][blockCollison[1]]["type"]) + "," + str(world[blockCollison[0]][blockCollison[1]]["state"]) + "," + str(world[blockCollison[0]][blockCollison[1]]["rotation"]) + "," + str(world[blockCollison[0]][blockCollison[1]]["health"] - 50) + "," + str(world[blockCollison[0]][blockCollison[1]]["special"]))
-
+                            blockUpdates.append("1," + str(blockCollision[0]) + "," + str(blockCollision[1]) + "," + str(world[blockCollision[0]][blockCollision[1]]["type"]) + "," + str(world[blockCollision[0]][blockCollision[1]]["state"]) + "," + str(world[blockCollision[0]][blockCollision[1]]["rotation"]) + "," + str(world[blockCollision[0]][blockCollision[1]]["health"] - 50) + "," + str(world[blockCollision[0]][blockCollision[1]]["special"]))
 
         # Do stuff
 
