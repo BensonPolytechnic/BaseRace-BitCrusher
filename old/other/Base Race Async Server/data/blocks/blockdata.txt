@@ -5,6 +5,8 @@ bool.rotatable:0;
 int.states:1;
 str.name:Air;
 bool.placeable:0;
+bool.wireable:0;
+bool.interactable:0;
 }
 
 {
@@ -14,6 +16,8 @@ bool.rotatable:0;
 int.states:1;
 str.name:Weak Block;
 bool.placeable:1;
+bool.wireable:0;
+bool.interactable:0;
 }
 
 
@@ -24,6 +28,8 @@ bool.rotatable:0;
 int.states:1;
 str.name:Medium Block;
 bool.placeable:1;
+bool.wireable:0;
+bool.interactable:0;
 }
 
 
@@ -34,43 +40,68 @@ bool.rotatable:0;
 int.states:1;
 str.name:Strong Block;
 bool.placeable:1;
+bool.wireable:0;
+bool.interactable:0;
 }
 
 
 {
 bool.collidable:1;
 int.health:1000;
-bool.rotatable:1;
-int.states:1;
+bool.rotatable:0;
+int.states:2;
 str.name:AND gate;
 bool.placeable:1;
+bool.wireable:1;
+int.inputCount:2;
+bool.interactable:0;
 }
 
 {
 bool.collidable:1;
 int.health:1000;
-bool.rotatable:1;
-int.states:1;
+bool.rotatable:0;
+int.states:2;
 str.name:OR gate;
 bool.placeable:1;
+bool.wireable:1;
+int.inputCount:2;
+bool.interactable:0;
 }
 
 {
 bool.collidable:1;
 int.health:1000;
-bool.rotatable:1;
-int.states:1;
+bool.rotatable:0;
+int.states:2;
 str.name:XOR gate;
 bool.placeable:1;
+bool.wireable:1;
+int.inputCount:2;
+bool.interactable:0;
 }
 
 
 {
 bool.collidable:1;
 int.health:1000;
-bool.rotatable:1;
-int.states:1;
+bool.rotatable:0;
+int.states:2;
 str.name:NOT gate;
 bool.placeable:1;
+bool.wireable:1;
+int.inputCount:1;
+bool.interactable:0;
 }
 
+{
+bool.collidable:1;
+int.health:1000;
+bool.rotatable:0;
+int.states:2;
+str.name:Switch;
+bool.placeable:1;
+bool.wireable:1;
+bool.interactable:1;
+int.inputCount:0;
+}

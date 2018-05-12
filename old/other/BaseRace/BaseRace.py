@@ -75,7 +75,7 @@ def simplePlayer(player):
                 simpleArray[6] = "1"
             else:
                 simpleArray[6] = "0"
-        
+
         elif key == "delta":
             simpleArray[7] = str(player["delta"][0])
             simpleArray[8] = str(player["delta"][1])
@@ -100,7 +100,7 @@ def complicatePlayerArray(simpleArray):
         playerArray["rotation"] = toSlope(float(simpleArray[3]))
 
         playerArray["isShooting"] = bool(int(simpleArray[6]))
-        
+
         playerArray["delta"] = [float(simpleArray[7]), float(simpleArray[8])]
 
     return playerArray
@@ -534,7 +534,14 @@ def createMenuButtons():
 
     return menuButtons
 
+def inWorld(point):
+    if point[0] >= 0 and point[0] < worldSize[0] and point[1] >= 0 and point[1] < worldSize[1]:
+        return True
+    else:
+        return False
 
+def getDistance(pointA, pointB):
+    return math.sqrt(math.pow(pointA[0] - pointB[0], 2) + math.pow(pointA[1] - pointB[1], 2))
 
 # Mildly important.
 def main():
@@ -555,52 +562,22 @@ def main():
 
     global window # The screen
 
-    while True:
-        displayPlayerInfo = input("Enable debug tools? (y/n): ") # Determines if debug tools should be enabled.
-
-        # Input validation.
-        if displayPlayerInfo.lower() == "y":
-            displayPlayerInfo = True
-
-            while True:
-                clientPlayerID = input("Player ID of the client (0 and 1 are team blue, 2 and 3 are team orange): ")
-
-                if clientPlayerID.isdigit():
-                    clientPlayerID = int(clientPlayerID)
-
-                    if clientPlayerID >= 0 and clientPlayerID <= 3:
-                        break
-
-            break
-
-        elif displayPlayerInfo.lower() == "n":
-            displayPlayerInfo = False
-            clientPlayerID = 0
-
-            break
-
 
     while True:
-        fromFile = input("Import world from file? (y/n): ") # Determines if the world should be loaded from the file 'world.txt'
+        clientPlayerID = input("Player ID of the client (0 and 1 are team blue, 2 and 3 are team orange): ")
 
-        # Input validation.
-        if fromFile.lower() == "y":
-            fromFile = True
+        if clientPlayerID.isdigit():
+            clientPlayerID = int(clientPlayerID)
 
-            break
-
-        elif fromFile.lower() == "n":
-            fromFile = False
-
-            break
-
+            if clientPlayerID >= 0 and clientPlayerID <= 3:
+                break
 
 
     # This is the size of the world. It is a list of two positive integer values that correspond to the width and height of the world.
     # It is given said values in the World Building thing.
 
     global worldSize
-    worldSize = [0, 0]
+    worldSize = [32, 64]
 
 
 
@@ -644,152 +621,36 @@ def main():
 
 
 
-    #########################################
-    ### WORLD BUILDING AND INITIALIZATION ###
-    #########################################
+    # Builds a world full of air that is 'worldSize[0]' by 'worldSize[1]'.
+    for x in range(worldSize[0]):
+        world.append([])
 
-    # If the world is being loaded from a file, this reads 'world.txt' and builds 'world' from it.
-
-    if fromFile:
-
-##        # Gets the width of the screen in pixels.
-##        scrW = pygame.display.Info().current_w
-##
-##        # Gets the height of the screen in pixels.
-##        scrH = pygame.display.Info().current_h
-##
-##        # Sets the display mode.
-##        window = pygame.display.set_mode((scrW, scrH), FULLSCREEN | HWSURFACE | DOUBLEBUF)
-
-        # Gets the width of the screen in pixels.
-        scrW = pygame.display.Info().current_w // 2
-
-        # Gets the height of the screen in pixels.
-        scrH = pygame.display.Info().current_h // 2
-
-        # Sets the display mode.
-        window = pygame.display.set_mode((scrW, scrH))
-
-        pygame.event.get()
-
-        # Imports block data and resizes sprites.
-        if scrW % 16 == 0:
-            blockData = importBlockData(scrW / 16)
-            defaultBlockWidth = scrW / 16
-
-        else:
-            # If the screen width isn't divisible by 16,
-            # this rounds sprite sizes up by 1 so there isn't any artifacting.
-            blockData = importBlockData(scrW / 16 + 1)
-            defaultBlockWidth = scrW / 16 + 1
-            print("fuck you and your disgusting screen resolution")
+        for y in range(worldSize[1]):
+            world[x].append({"type":0, "state":0, "rotation":0, "health":0, "special":"00"})
 
 
-        # Loads world.txt
-        worldImport = open(os.path.join("data", "world", "world.txt"), "r")
+    # Gets the width of the screen in pixels.
+    scrW = pygame.display.Info().current_w
 
-        # Reads world.txt
-        rawWorld = worldImport.readlines()
+    # Gets the height of the screen in pixels.
+    scrH = pygame.display.Info().current_h
 
-        # Closes world.txt
-        worldImport.close()
+    # Sets the display mode.
+    window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
 
-        # Deletes the file object because it isn't needed anymore.
-        del worldImport
+    pygame.event.get()
 
-
-        # Ensures that the length of each line in world.txt is the same, because holy
-        # shit I don't want to implement support for non-rectangular worlds.
-        for line in range(len(rawWorld)):
-            rawWorld[line] = rawWorld[line].strip()
-
-            if line == 0:
-                continue
-
-            # If the length line currently being read is not the same length as the previous, this closes the program.
-            elif len(rawWorld[line]) != len(rawWorld[line - 1]):
-                pygame.quit()
-                raise IndexError("Width of the world MUST be consistent")
-
-
-        # The following two loops rotate the array, so to refer to a block position in the world you can write world[x][y] rather that world[y][x]
-        for i in range(len(rawWorld[0])):
-            world.append([])
-
-        for x in range(len(world)):
-            for y in range(len(rawWorld)):
-                world[x].append({"type":int(rawWorld[y][x]), "state":0, "rotation":0, "health":blockData[int(rawWorld[y][x])]["health"]})
-
-
-        # Degrades all of the blocks on the top edge of the world to test block health sprites.
-        for x in range(32):
-            world[x][0]["health"] = blockData[world[x][0]["type"]]["health"] - (x * (1 / 32) * blockData[world[x][0]["type"]]["health"])
-
-
-        # Rotates some of the blocks in the top-left corner of the world to test block rotation.
-        world[0][0]["rotation"] = 1
-        world[1][0]["rotation"] = 2
-        world[2][0]["rotation"] = 3
-        world[3][0]["rotation"] = 2
-        world[4][0]["rotation"] = 1
-
-
-        # boop
-        del rawWorld
-
-        # Defines worldSize because its probably used for something important i dont fukin know anymore.
-        worldSize = [len(world), len(world[0])]
+    # Imports block data and resizes sprites.
+    if scrW % 16 == 0:
+        blockData = importBlockData(scrW / 16)
+        defaultBlockWidth = scrW / 16
 
     else:
-        # Gets and validates the width of the blank world from the user.
-        while True:
-            worldSize[0] = input("Width of the world (int): ") # Gets the width of the world from console input.
-
-            # Input validation
-            if worldSize[0].isdigit():
-                worldSize[0] = int(worldSize[0])
-                break
-
-        # Gets and validates the height of the blank world from the user.
-        while True:
-            worldSize[1] = input("Height of the world (int): ") # Gets the height of the world from console input.
-
-            # Input validation
-            if worldSize[1].isdigit():
-                worldSize[1] = int(worldSize[1])
-                break
-
-
-        # Builds a world full of air that is 'worldSize[0]' by 'worldSize[1]'.
-        for x in range(worldSize[0]):
-            world.append([])
-
-            for y in range(worldSize[1]):
-                world[x].append({"type":0, "state":0, "rotation":0, "health":0})
-
-
-        # Gets the width of the screen in pixels.
-        scrW = pygame.display.Info().current_w
-
-        # Gets the height of the screen in pixels.
-        scrH = pygame.display.Info().current_h
-
-        # Sets the display mode.
-        window = pygame.display.set_mode((scrW, scrH), pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
-
-        pygame.event.get()
-
-        # Imports block data and resizes sprites.
-        if scrW % 16 == 0:
-            blockData = importBlockData(scrW / 16)
-            defaultBlockWidth = scrW / 16
-
-        else:
-            # If the screen width isn't divisible by 16,
-            # this rounds sprite sizes up by 1 so there isn't any artifacting.
-            blockData = importBlockData(scrW / 16 + 1)
-            defaultBlockWidth = scrW / 16 + 1
-            print("fuck you and your disgusting screen resolution")
+        # If the screen width isn't divisible by 16,
+        # this rounds sprite sizes up by 1 so there isn't any artifacting.
+        blockData = importBlockData(scrW / 16 + 1)
+        defaultBlockWidth = scrW / 16 + 1
+        print("fuck you and your disgusting screen resolution")
 
     ctypes.windll.user32.mouse_event(2, 0, 0, 0,0) # left down
     ctypes.windll.user32.mouse_event(4, 0, 0, 0,0) # left up
@@ -852,6 +713,10 @@ def main():
 
     mainMenuButtons = createMenuButtons()
 
+    teamLogo = pygame.image.load(os.path.join("data", "mw.png")).convert_alpha()
+
+    teamLogo = pygame.transform.scale(teamLogo, ((scrH * 2) // 3, (scrH * 2) // 3))
+
     mainMenuFont = pygame.font.Font(os.path.join("data", "fonts", "audiowide.ttf"), int(defaultBlockWidth * 1.5))
 
     creditFont = pygame.font.Font(os.path.join("data", "fonts", "audiowide.ttf"), int(defaultBlockWidth * 0.75))
@@ -859,6 +724,8 @@ def main():
     mainMenuText = mainMenuFont.render("BASE RACE", 2, [0, 0, 0])
 
     mainMenuSprite.blit(mainMenuText, [scrW / 2 - mainMenuSprite.get_width() / 2 + defaultBlockWidth / 2.5, 0])
+
+    mainMenuSprite.blit(teamLogo, [scrW / 2, scrH * 3 / 16])
 
     credit = pygame.Surface((scrW, scrH))
 
@@ -948,6 +815,10 @@ def main():
     # Font used to display block counts and block names in the inventory.
     inventorySmallText = pygame.font.Font(os.path.join("data", "fonts", "VT323-Regular.ttf"), int(scrW / 32))
 
+    inventoryDisplayText = monoFont.render("INVENTORY", 0, [0, 255, 0])
+
+    wiringDisplayText = monoFont.render("WIRING", 0, [0, 255, 0])
+
     # Two sprites used to display where the player is attempting to place a block, and whether it's possible.
     blockSelectionSprites = [pygame.Surface([blockData[0]["sprites"][0][0].get_height(), blockData[0]["sprites"][0][0].get_height()]).convert_alpha(), pygame.Surface([blockData[0]["sprites"][0][0].get_height(), blockData[0]["sprites"][0][0].get_height()]).convert_alpha()]
 
@@ -991,7 +862,10 @@ def main():
     # rotation - A list containing a slope and direction.
     # isShooting - Whether or not the player is shooting.
     global players
-    players = [{"team":0, "health":100, "pos":[16.0, 16.0], "energy":100, "rotation":[0, 0], "isShooting":False, "delta":[0.0, 0.0]}, {"team":0, "health":100, "pos":[12.0, 4.0], "energy":100, "rotation":[-0.5, 1], "isShooting":False, "delta":[0.0, 0.0]}, {"team":1, "health":100, "pos":[18.0, 29.0], "energy":100, "rotation":[5.1, 1], "isShooting":False, "delta":[0.0, 0.0]}, {"team":1, "health":100, "pos":[18.0, 27.0], "energy":100, "rotation":[2.3, -1], "isShooting":True, "delta":[0.0, 0.0]}]
+    players = [{"team":0, "health":100, "pos":[14.0, 16.0], "energy":100, "rotation":[0.0, 1], "isShooting":False, "delta":[0.0, 0.0]},
+     {"team":0, "health":100, "pos":[18.0, 16.0], "energy":100, "rotation":[0.0, 1], "isShooting":False, "delta":[0.0, 0.0]},
+      {"team":1, "health":100, "pos":[14.0, 48.0], "energy":100, "rotation":[0.0, 1], "isShooting":False, "delta":[0.0, 0.0]},
+       {"team":1, "health":100, "pos":[18.0, 48.0], "energy":100, "rotation":[0.0, 1], "isShooting":False, "delta":[0.0, 0.0]}]
 
     # Radius of the player's body
     global playerRadius
@@ -1072,11 +946,32 @@ def main():
 
     blockUpdates = []
 
+    playerDelta = [0.0, 0.0]
+
     denyBlockPlacement = False
 
     disallowPlacementFlag = False
 
+    wires = []
+
+    #[[[x, y], [x, y, s]], [[x, y], [x, y, s]], [[x, y], [x, y, s]]...]
     uiState = "normal"
+
+    gameSequence = 0
+
+    denyWire = False
+
+    wireAdds = []
+
+    wireDeletes = []
+
+    wireUpdates = []
+
+    heldWire = None
+
+    displayPlayerInfo = False
+
+    ####
 
     while not gameExit:
         if gameState == "credits":
@@ -1199,6 +1094,8 @@ def main():
 
             mousePos = pygame.mouse.get_pos() # Gets mouse position.
 
+            worldMousePos = getWorldPos(mousePos)
+
             #Event handler, gets & handles input.
             for event in pygame.event.get():
                 if event.type == KEYDOWN:
@@ -1221,13 +1118,37 @@ def main():
 
                     #Debug tools, they zoom the camera out or in:
                     elif event.key == K_r:
-                        cameraZoom = 60.5
+                        if uiState == "inventory":
+                            if spriteWorldPos[0] >= 0 and spriteWorldPos[0] < worldSize[0] and spriteWorldPos[1] >= 0 and spriteWorldPos[1] < worldSize[1]:
+                                if blockData[world[spriteWorldPos[0]][spriteWorldPos[1]]["type"]]["rotatable"]:
+                                    if world[spriteWorldPos[0]][spriteWorldPos[1]]["rotation"] != 3:
+                                        blockUpdates.append([str(spriteWorldPos[0]), str(spriteWorldPos[1]), str(world[spriteWorldPos[0]][spriteWorldPos[1]]["type"]), str(world[spriteWorldPos[0]][spriteWorldPos[1]]["state"]), str(int(world[spriteWorldPos[0]][spriteWorldPos[1]]["rotation"]) + 1), str(world[spriteWorldPos[0]][spriteWorldPos[1]]["health"]), str(world[spriteWorldPos[0]][spriteWorldPos[1]]["special"])])
+                                    else:
+                                        blockUpdates.append([str(spriteWorldPos[0]), str(spriteWorldPos[1]), str(world[spriteWorldPos[0]][spriteWorldPos[1]]["type"]), str(world[spriteWorldPos[0]][spriteWorldPos[1]]["state"]), "0", str(world[spriteWorldPos[0]][spriteWorldPos[1]]["health"]), str(world[spriteWorldPos[0]][spriteWorldPos[1]]["special"])])
 
                     elif event.key == K_f:
-                        cameraZoom = 16
+                        if blockData[world[int(getWorldPos(mousePos)[0])][int(getWorldPos(mousePos)[1])]["type"]]["interactable"]:
+                            if world[ int(worldMousePos[0])][int(worldMousePos[1])]["state"] == 0:
+                                print("trying to change")
+                                blockUpdates.append([str(spriteWorldPos[0]), str(spriteWorldPos[1]), str(world[spriteWorldPos[0]][spriteWorldPos[1]]["type"]), "1", str(world[spriteWorldPos[0]][spriteWorldPos[1]]["rotation"]), str(world[spriteWorldPos[0]][spriteWorldPos[1]]["health"]), str(world[spriteWorldPos[0]][spriteWorldPos[1]]["special"])])
+                            else:
+                                blockUpdates.append([str(spriteWorldPos[0]), str(spriteWorldPos[1]), str(world[spriteWorldPos[0]][spriteWorldPos[1]]["type"]), "0", str(world[spriteWorldPos[0]][spriteWorldPos[1]]["rotation"]), str(world[spriteWorldPos[0]][spriteWorldPos[1]]["health"]), str(world[spriteWorldPos[0]][spriteWorldPos[1]]["special"])])
 
-                    elif event.key == K_t:
-                        cutscene(cameraPos, [16.0, 16.0], cameraZoom, 16, 2, 1)
+                    elif event.key == K_e:
+                        if gameSequence == 0:
+                            if uiState == "inventory":
+                                uiState = "normal"
+                            else:
+                                uiState = "inventory"
+                                heldWire = None
+
+                    elif event.key == K_q:
+                        if gameSequence == 0:
+                            if uiState == "wiring":
+                                uiState = "normal"
+                                heldWire = None
+                            else:
+                                uiState = "wiring"
 
                 elif event.type == KEYUP:
 
@@ -1244,18 +1165,34 @@ def main():
                     elif event.key == K_s:
                         inputSet[1] = 0
 
-                    elif event.key == K_e:
-                        if uiState == "inventory":
-                            uiState = "normal"
-                        else:
-                            uiState = "inventory"
-                            heldWire = None
+
 
                 elif event.type == MOUSEBUTTONDOWN:
 
                     # This sets corresponding mouse buttons in 'inputSet' to 1 if they're being pushed.
                     if event.button == 1: # Left click detection
                         inputSet[4] = 1
+                        if uiState == "wiring":
+                            for block in [[int(worldMousePos[0] + 0.5), int(worldMousePos[1] + 0.5)], [int(worldMousePos[0] - 0.5), int(worldMousePos[1] + 0.5)], [int(worldMousePos[0] + 0.5), int(worldMousePos[1] - 0.5)], [int(worldMousePos[0] - 0.5), int(worldMousePos[1] - 0.5)]]:
+                                if inWorld(block):
+                                    if blockData[world[block[0]][block[1]]["type"]]["wireable"]:
+                                        if getDistance(worldMousePos, [block[0] + 0.5, block[1]]) <= 0.16:
+                                            heldWire = block
+                                            break
+
+                                        elif blockData[world[block[0]][block[1]]["type"]]["inputCount"] == 1:
+                                            if getDistance(worldMousePos, [block[0] + 0.5, block[1] + 1]) <= 0.16:
+                                                for wire in wires:
+                                                    if [wire[1][0], wire[1][1]] == block:
+                                                        wireDeletes.append(wire)
+                                                        break
+
+                                        elif blockData[world[block[0]][block[1]]["type"]]["inputCount"] == 2:
+                                            if getDistance(worldMousePos, [block[0] + 0.33, block[1] + 1]) <= 0.16 or getDistance(worldMousePos, [block[0] + 0.67, block[1] + 1]) <= 0.16:
+                                                for wire in wires:
+                                                    if [wire[1][0], wire[1][1]] == block:
+                                                        wireDeletes.append(wire)
+                                                        break
 
                     elif event.button == 3: # Right click detection
                         inputSet[5] = 1
@@ -1272,6 +1209,25 @@ def main():
                     # This sets corresponding mouse buttons in 'inputSet' to 0 if they're not being pushed.
                     if event.button == 1: # Left click detection
                         inputSet[4] = 0
+                        if heldWire != None:
+                            for block in [[int(worldMousePos[0] + 0.5), int(worldMousePos[1] + 0.5)], [int(worldMousePos[0] - 0.5), int(worldMousePos[1] + 0.5)], [int(worldMousePos[0] + 0.5), int(worldMousePos[1] - 0.5)], [int(worldMousePos[0] - 0.5), int(worldMousePos[1] - 0.5)]]:
+                                if inWorld(block):
+                                    if blockData[world[block[0]][block[1]]["type"]]["wireable"]:
+                                        if blockData[world[block[0]][block[1]]["type"]]["inputCount"] == 1:
+                                            if getDistance(worldMousePos, [block[0] + 0.5, block[1] + 1]) <= 0.16:
+                                                wireAdds.append([str(heldWire[0]), str(heldWire[1]), str(block[0]), str(block[1]), "0"])
+                                                break
+
+                                        elif blockData[world[block[0]][block[1]]["type"]]["inputCount"] == 2:
+                                            if getDistance(worldMousePos, [block[0] + 0.33, block[1] + 1]) <= 0.16:
+                                                wireAdds.append([str(heldWire[0]), str(heldWire[1]), str(block[0]), str(block[1]), "0"])
+                                                break
+
+                                            elif getDistance(worldMousePos, [block[0] + 0.67, block[1] + 1]) <= 0.16:
+                                                wireAdds.append([str(heldWire[0]), str(heldWire[1]), str(block[0]), str(block[1]), "1"])
+                                                break
+
+                        heldWire = None
 
                     elif event.button == 3: # Right click detection
                         inputSet[5] = 0
@@ -1296,11 +1252,11 @@ def main():
 
 
             # Checks if the mouse is being clicked, and makes the player start shooting if it is.
-            if inputSet[4] == 1:
-                if uiState == "inventory":
+            if inputSet[4] == 1 and inputSet[5] == 0:
+                if uiState == "inventory" and gameSequence == 0:
                     if spriteWorldPos[0] >= 0 and spriteWorldPos[0] < worldSize[0] and spriteWorldPos[1] >= 0 and spriteWorldPos[1] < worldSize[1]:
                         if world[spriteWorldPos[0]][spriteWorldPos[1]]["type"] == 0 and not denyBlockPlacement:
-                            blockUpdate = [str(spriteWorldPos[0]), str(spriteWorldPos[1]), str(playerInventory[targetScroll]), "0", "0", str(blockData[playerInventory[targetScroll]]["health"])]
+                            blockUpdate = [str(spriteWorldPos[0]), str(spriteWorldPos[1]), str(playerInventory[targetScroll]), "0", "0", str(blockData[playerInventory[targetScroll]]["health"]), "00"]
                             if blockUpdate not in blockUpdates:
                                 disallowPlacementFlag = False
 
@@ -1315,23 +1271,41 @@ def main():
                     # Do a bunch of stuff to talk to the server
 
                 else:
-                    players[clientPlayerID]["isShooting"] = True
-
-                    if players[clientPlayerID]["energy"] > 1:
-                        if laserHold == False:
-                            sounds[1].play()
-                            laserHold = True
+                    if gameSequence == 1:
                         players[clientPlayerID]["isShooting"] = True
 
-                    else:
-                        if laserHold:
-                            laserHold = False
+                        if players[clientPlayerID]["energy"] > 1:
+                            if laserHold == False:
+                                sounds[1].play()
+                                laserHold = True
+                            players[clientPlayerID]["isShooting"] = True
+
+                        else:
+                            if laserHold:
+                                laserHold = False
 
 
             else:
                 players[clientPlayerID]["isShooting"] = False
                 if laserHold:
                     laserHold = False
+
+            if inputSet[4] == 0 and inputSet[5] == 1:
+                if uiState == "inventory" and gameSequence == 0:
+                    if spriteWorldPos[0] >= 0 and spriteWorldPos[0] < worldSize[0] and spriteWorldPos[1] >= 0 and spriteWorldPos[1] < worldSize[1]:
+                        if world[spriteWorldPos[0]][spriteWorldPos[1]]["type"] != 0:
+                            blockUpdate = [str(spriteWorldPos[0]), str(spriteWorldPos[1]), "0", "0", "0", str(blockData[playerInventory[targetScroll]]["health"]), "00"]
+                            if blockUpdate not in blockUpdates:
+                                disallowPlacementFlag = False
+
+                                for update in pendingBlockUpdates:
+                                    if [update[0], update[1]] == [blockUpdate[0], blockUpdate[1]]:
+                                        disallowPlacementFlag = True
+                                        break
+
+                                if not disallowPlacementFlag:
+                                    blockUpdates.append(blockUpdate)
+                                    pendingBlockUpdates.append([blockUpdate[0], blockUpdate[1], time.time()])
 
 
 
@@ -1340,48 +1314,60 @@ def main():
                 if inputSet[0] == 1: # This checks if up is being pressed.
 
                   if inputSet[2] == 1: # This checks if left is being pressed
-                      players[clientPlayerID]["delta"] = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1)] # Move the player diagonally up and left.
+                      players[clientPlayerID]["delta"] = [(-1) * math.sqrt(2) / 2, (-1) * math.sqrt(2) / 2]
+                      playerDelta = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1)] # Move the player diagonally up and left.
 
                   else: # Because we already know that left is NOT being pressed at this point, and that up IS being pressed, we already know to move the player up and right.
-                      players[clientPlayerID]["delta"] = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1)] # Move the player diagonally up and right.
+                      players[clientPlayerID]["delta"] = [math.sqrt(2) / 2, (-1) * math.sqrt(2) / 2]
+                      playerDelta = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1)] # Move the player diagonally up and right.
 
                 else: #If down is NOT being pressed:
 
                   if inputSet[2] == 1: # Check if right is being pressed
-                      players[clientPlayerID]["delta"] = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2)] # Move the player diagonally down and left.
+                      players[clientPlayerID]["delta"] = [(-1) * math.sqrt(2) / 2,math.sqrt(2) / 2]
+                      playerDelta = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2) * (-1), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2)] # Move the player diagonally down and left.
 
                   else: # The only possible other option is down and left being pressed.
-                      players[clientPlayerID]["delta"] = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2)] # Move the player diagonally down and right.
+                      players[clientPlayerID]["delta"] = [math.sqrt(2) / 2,math.sqrt(2) / 2]
+                      playerDelta = [math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2), math.sqrt(math.pow((t.get_time() * playerSpeed), 2) / 2)] # Move the player diagonally down and right.
 
             else: # If the player is NOT pressing diagonally:
 
               if inputSet[0] == 1 or inputSet[1] == 1: # Check if the player is pressing up or down
 
                   if inputSet[0] == inputSet[1]: # If the player is pressing up AND down, the inputs cancel out and the player does not move.
-                      players[clientPlayerID]["delta"][1] = 0 # Don't move the player vertically.
+                      playerDelta[1] = 0 # Don't move the player vertically.
+                      players[clientPlayerID]["delta"][1] = 0
 
                   elif inputSet[0] == 1: # Check if the player is ONLY pressing up
-                      players[clientPlayerID]["delta"][1] =  -(t.get_time() * playerSpeed) # Move the player vertically up. This is negative because of the grid system being dumb.
+                      playerDelta[1] =  -(t.get_time() * playerSpeed) # Move the player vertically up. This is negative because of the grid system being dumb.
+                      players[clientPlayerID]["delta"][1] = -1
 
                   else: # If up OR down are being pressed, and down is NOT being pressed, we know to move the player vertically down
-                      players[clientPlayerID]["delta"][1] = (t.get_time() * playerSpeed) # Move the player vertically down. This is positive because of the grid system being dumb.
+                      playerDelta[1] = (t.get_time() * playerSpeed) # Move the player vertically down. This is positive because of the grid system being dumb.
+                      players[clientPlayerID]["delta"][1] = 1
 
               else: # If neither up nor down are being pressed, don't move the player vertically.
-                  players[clientPlayerID]["delta"][1] = 0 # Don't move the player vertically.
+                  playerDelta[1] = 0 # Don't move the player vertically.
+                  players[clientPlayerID]["delta"][1] = 0
 
               if inputSet[2] == 1 or inputSet[3] == 1: # Check if the player is pressing left or right
 
                   if inputSet[2] == inputSet[3]: # If the player is pressing left AND right, the inputs cancel out and the player does not move.
-                      players[clientPlayerID]["delta"][0] = 0 # Don't move the player horizontally.
+                      playerDelta[0] = 0 # Don't move the player horizontally.
+                      players[clientPlayerID]["delta"][0] = 0
 
                   elif inputSet[2] == 1: # Check if the player is ONLY pressing left
-                      players[clientPlayerID]["delta"][0] =  -(t.get_time() * playerSpeed) # Move the player horizontally left.
+                      playerDelta[0] =  -(t.get_time() * playerSpeed) # Move the player horizontally left.
+                      players[clientPlayerID]["delta"][0] = -1
 
                   else: # If left OR right are being pressed, and left is NOT being pressed, we know to move the player horizontally right.
-                      players[clientPlayerID]["delta"][0] = (t.get_time() * playerSpeed) # Move the player horizontally right.
+                      playerDelta[0] = (t.get_time() * playerSpeed) # Move the player horizontally right.
+                      players[clientPlayerID]["delta"][0] = 1
 
               else: # If neither left NOR right are being pressed, don't move the player vertically.
-                  players[clientPlayerID]["delta"][0] = 0 # Don't move the player horizontally.
+                  playerDelta[0] = 0 # Don't move the player horizontally.
+                  players[clientPlayerID]["delta"][0] = 0
 
 
 
@@ -1389,112 +1375,126 @@ def main():
             # playerDelta would put it outside of the world.
             # Rather than just setting playerDelta to 0, it makes it so the player *perfectly* squishes up against the side of the world,
             # so we can maintain delicious pixel-perfectness
-            if players[clientPlayerID]["delta"][0] + players[clientPlayerID]["pos"][0] < 0.5: # Check if the player will go outside the right edge
-                players[clientPlayerID]["delta"][0] = -(players[clientPlayerID]["pos"][0] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+            if playerDelta[0] + players[clientPlayerID]["pos"][0] < 0.5: # Check if the player will go outside the right edge
+                playerDelta[0] = -(players[clientPlayerID]["pos"][0] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
 
-            elif players[clientPlayerID]["delta"][0] + players[clientPlayerID]["pos"][0] > worldSize[0] - 0.5: # Check if the player will go outside the left edge
-                players[clientPlayerID]["delta"][0] = (worldSize[0] - 0.5) - players[clientPlayerID]["pos"][0] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+            elif playerDelta[0] + players[clientPlayerID]["pos"][0] > worldSize[0] - 0.5: # Check if the player will go outside the left edge
+                playerDelta[0] = (worldSize[0] - 0.5) - players[clientPlayerID]["pos"][0] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
 
-            if players[clientPlayerID]["delta"][1] + players[clientPlayerID]["pos"][1] > worldSize[1] - 0.5: # Check if the player will go outside the bottom edge
-                players[clientPlayerID]["delta"][1] = (worldSize[1] - 0.5) - players[clientPlayerID]["pos"][1] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+            if gameSequence == 0:
+                if players[clientPlayerID]["team"] == 0:
+                    if playerDelta[1] + players[clientPlayerID]["pos"][1] > worldSize[1] // 2 - 0.5: # Check if the player will go outside the bottom edge
+                        playerDelta[1] = (worldSize[1] // 2 - 0.5) - players[clientPlayerID]["pos"][1] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
 
-            elif players[clientPlayerID]["delta"][1] + players[clientPlayerID]["pos"][1] < 0.5: # Check if the player will go outside the top edge
-                players[clientPlayerID]["delta"][1] = -(players[clientPlayerID]["pos"][1] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+                    elif playerDelta[1] + players[clientPlayerID]["pos"][1] < 0.5: # Check if the player will go outside the top edge
+                        playerDelta[1] = -(players[clientPlayerID]["pos"][1] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+
+                elif players[clientPlayerID]["team"] == 1:
+                    if playerDelta[1] + players[clientPlayerID]["pos"][1] > worldSize[1] - 0.5: # Check if the player will go outside the bottom edge
+                        playerDelta[1] = (worldSize[1] - 0.5) - players[clientPlayerID]["pos"][1] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+
+                    elif playerDelta[1] + players[clientPlayerID]["pos"][1] < worldSize[1] // 2 + 0.5: # Check if the player will go outside the top edge
+                        playerDelta[1] = players[clientPlayerID]["pos"][1] - (worldSize[1] / 2 + 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+
+
+            else:
+                if playerDelta[1] + players[clientPlayerID]["pos"][1] > worldSize[1] - 0.5: # Check if the player will go outside the bottom edge
+                    playerDelta[1] = (worldSize[1] - 0.5) - players[clientPlayerID]["pos"][1] # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+
+                elif playerDelta[1] + players[clientPlayerID]["pos"][1] < 0.5: # Check if the player will go outside the top edge
+                    playerDelta[1] = -(players[clientPlayerID]["pos"][1] - 0.5) # Place the player perfectly 0.5 grid-base units next to the edge of the world.
+
 
 
 
             ### COLLISIONS ###
-            for player in range(len(players)):
+            preArcPos = [0, 0]
 
-                preArcPos = [0, 0]
+            nextPlayerPos = [players[clientPlayerID]["pos"][0] + playerDelta[0], players[clientPlayerID]["pos"][1] + playerDelta[1]]
 
-                nextPlayerPos = [players[player]["pos"][0] + players[player]["delta"][0], players[player]["pos"][1] + players[player]["delta"][1]]
+            pointPos = [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]
 
-                pointPos = [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]
+            collideRange = [[int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]]
 
-                collideRange = [[int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)], [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]]
-
-                magnitude = math.sqrt(math.pow(players[player]["delta"][0], 2) + math.pow(players[player]["delta"][1], 2))
+            magnitude = math.sqrt(math.pow(playerDelta[0], 2) + math.pow(playerDelta[1], 2))
 
 
-                for block in enumerate(collideRange):
-                  if block[1][0] < 0 or block[1][0] >= worldSize[0]:
-                      collideRange[block[0]] = "EOW"
+            for block in enumerate(collideRange):
+              if block[1][0] < 0 or block[1][0] >= worldSize[0]:
+                  collideRange[block[0]] = "EOW"
 
-                  if block[1][1] < 0 or block[1][1] >= worldSize[1]:
-                      collideRange[block[0]] = "EOW"
+              if block[1][1] < 0 or block[1][1] >= worldSize[1]:
+                  collideRange[block[0]] = "EOW"
 
 
-                for block in collideRange:
-                  if block == "EOW":
-                      continue
+            for block in collideRange:
+              if block == "EOW":
+                  continue
 
-                  if blockData[world[block[0]][block[1]]["type"]]["collidable"]:
+              if blockData[world[block[0]][block[1]]["type"]]["collidable"]:
 
-                      if math.sqrt(math.pow(nextPlayerPos[0] - pointPos[0], 2) + math.pow(nextPlayerPos[1] - pointPos[1], 2)) < 0.45:
+                  if math.sqrt(math.pow(nextPlayerPos[0] - pointPos[0], 2) + math.pow(nextPlayerPos[1] - pointPos[1], 2)) < 0.45:
 
-                          if players[player]["delta"][0] == 0:
-                              if math.sqrt(math.pow(nextPlayerPos[0] - preArcPos[0], 2) + math.pow(nextPlayerPos[1] - (pointPos[1] + math.sqrt(0.2025 - math.pow(players[player]["pos"][0] - pointPos[0], 2))), 2)) > math.sqrt(math.pow(nextPlayerPos[0] - preArcPos[0], 2) + math.pow(nextPlayerPos[1] - (pointPos[1] - math.sqrt(0.2025 - math.pow(players[player]["pos"][0] - pointPos[0], 2))), 2)):
-                                  preArcPos[0] = players[player]["pos"][0]
-                                  preArcPos[1] = pointPos[1] - math.sqrt(0.2025 - math.pow(players[player]["pos"][0] - pointPos[0], 2))
-                              else:
-                                  preArcPos[0] = players[player]["pos"][0]
-                                  preArcPos[1] = pointPos[1] + math.sqrt(0.2025 - math.pow(players[player]["pos"][0] - pointPos[0], 2))
-
+                      if playerDelta[0] == 0:
+                          if math.sqrt(math.pow(nextPlayerPos[0] - preArcPos[0], 2) + math.pow(nextPlayerPos[1] - (pointPos[1] + math.sqrt(0.2025 - math.pow(players[clientPlayerID]["pos"][0] - pointPos[0], 2))), 2)) > math.sqrt(math.pow(nextPlayerPos[0] - preArcPos[0], 2) + math.pow(nextPlayerPos[1] - (pointPos[1] - math.sqrt(0.2025 - math.pow(players[clientPlayerID]["pos"][0] - pointPos[0], 2))), 2)):
+                              preArcPos[0] = players[clientPlayerID]["pos"][0]
+                              preArcPos[1] = pointPos[1] - math.sqrt(0.2025 - math.pow(players[clientPlayerID]["pos"][0] - pointPos[0], 2))
                           else:
-                              m = players[player]["delta"][1] / players[player]["delta"][0]
-                              b = nextPlayerPos[1] - m * nextPlayerPos[0]
+                              preArcPos[0] = players[clientPlayerID]["pos"][0]
+                              preArcPos[1] = pointPos[1] + math.sqrt(0.2025 - math.pow(players[clientPlayerID]["pos"][0] - pointPos[0], 2))
 
-                              xPoints = quadraticSolutions(math.pow(m, 2) + 1, 2 * m * b - 2 * m * pointPos[1] - 2 * pointPos[0], math.pow(pointPos[0], 2) + math.pow(b, 2) + math.pow(pointPos[1], 2) - (2 * b * pointPos[1]) - 0.2025)
+                      else:
+                          m = playerDelta[1] / playerDelta[0]
+                          b = nextPlayerPos[1] - m * nextPlayerPos[0]
 
-                              if math.sqrt(math.pow((nextPlayerPos[0] - xPoints[0]), 2) + math.pow((nextPlayerPos[1] - (m * xPoints[0] + b)), 2)) < math.sqrt(math.pow((nextPlayerPos[0] - xPoints[1]), 2) + math.pow((nextPlayerPos[1] - (m * xPoints[1] + b)), 2)):
-                                  preArcPos = [xPoints[0], m * xPoints[0] + b]
-                              else:
-                                  preArcPos = [xPoints[1], m * xPoints[1] + b]
+                          xPoints = quadraticSolutions(math.pow(m, 2) + 1, 2 * m * b - 2 * m * pointPos[1] - 2 * pointPos[0], math.pow(pointPos[0], 2) + math.pow(b, 2) + math.pow(pointPos[1], 2) - (2 * b * pointPos[1]) - 0.2025)
 
-                          if (nextPlayerPos[0] - pointPos[0]) != 0:
-                              if block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]:
-                                  collideAngle = math.atan(((nextPlayerPos[1] - pointPos[1])) / ((nextPlayerPos[0] - pointPos[0])))
-                                  players[player]["pos"] = preArcPos
-                                  players[player]["delta"] = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
-
-                              elif block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)]:
-                                  collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / ((nextPlayerPos[0] - pointPos[0])))
-                                  players[player]["pos"] = preArcPos
-                                  players[player]["delta"] = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
-
-                              elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)]:
-                                  collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
-                                  players[player]["pos"] = preArcPos
-                                  players[player]["delta"] = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
-
-                              elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]:
-                                  collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
-                                  players[player]["pos"] = preArcPos
-                                  players[player]["delta"] = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
-
-
-
-                      if players[player]["pos"][0] >= block[0] - 0.05 and players[player]["pos"][0] <= block[0] + 1.05:
-                          if block[1] - players[player]["pos"][1] <= 0:
-                              players[player]["delta"][1] = block[1] - (players[player]["pos"][1] + 0.5) + 2
-
+                          if math.sqrt(math.pow((nextPlayerPos[0] - xPoints[0]), 2) + math.pow((nextPlayerPos[1] - (m * xPoints[0] + b)), 2)) < math.sqrt(math.pow((nextPlayerPos[0] - xPoints[1]), 2) + math.pow((nextPlayerPos[1] - (m * xPoints[1] + b)), 2)):
+                              preArcPos = [xPoints[0], m * xPoints[0] + b]
                           else:
-                              players[player]["delta"][1] = block[1] - (players[player]["pos"][1] + 0.5)
+                              preArcPos = [xPoints[1], m * xPoints[1] + b]
+
+                      if (nextPlayerPos[0] - pointPos[0]) != 0:
+                          if block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] + 0.5)]:
+                              collideAngle = math.atan(((nextPlayerPos[1] - pointPos[1])) / ((nextPlayerPos[0] - pointPos[0])))
+                              players[clientPlayerID]["pos"] = preArcPos
+                              playerDelta = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
+
+                          elif block == [int(nextPlayerPos[0] + 0.5), int(nextPlayerPos[1] - 0.5)]:
+                              collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / ((nextPlayerPos[0] - pointPos[0])))
+                              players[clientPlayerID]["pos"] = preArcPos
+                              playerDelta = [-(magnitude * math.cos(-collideAngle)), (magnitude * math.sin(-collideAngle))]
+
+                          elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] + 0.5)]:
+                              collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
+                              players[clientPlayerID]["pos"] = preArcPos
+                              playerDelta = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
+
+                          elif block == [int(nextPlayerPos[0] - 0.5), int(nextPlayerPos[1] - 0.5)]:
+                              collideAngle = math.atan((nextPlayerPos[1] - pointPos[1]) / (nextPlayerPos[0] - pointPos[0])) ##
+                              players[clientPlayerID]["pos"] = preArcPos
+                              playerDelta = [(magnitude * math.cos(collideAngle)), magnitude * math.sin(collideAngle)]
 
 
 
-                      if players[player]["pos"][1] >= block[1] - 0.05 and players[player]["pos"][1] <= block[1] + 1.05:
-                          if block[0] - players[player]["pos"][0] <= 0:
-                              players[player]["delta"][0] = block[0] - (players[player]["pos"][0] + 0.5) + 2
+                  if players[clientPlayerID]["pos"][0] >= block[0] - 0.05 and players[clientPlayerID]["pos"][0] <= block[0] + 1.05:
+                      if block[1] - players[clientPlayerID]["pos"][1] <= 0:
+                          playerDelta[1] = block[1] - (players[clientPlayerID]["pos"][1] + 0.5) + 2
 
-                          else:
-                              players[player]["delta"][0] = block[0] - (players[player]["pos"][0] + 0.5)
+                      else:
+                          playerDelta[1] = block[1] - (players[clientPlayerID]["pos"][1] + 0.5)
 
 
 
-            for player in range(len(players)):
-                players[player]["pos"] = [players[player]["pos"][0] + players[player]["delta"][0], players[player]["pos"][1] + players[player]["delta"][1]]
+                  if players[clientPlayerID]["pos"][1] >= block[1] - 0.05 and players[clientPlayerID]["pos"][1] <= block[1] + 1.05:
+                      if block[0] - players[clientPlayerID]["pos"][0] <= 0:
+                          playerDelta[0] = block[0] - (players[clientPlayerID]["pos"][0] + 0.5) + 2
+
+                      else:
+                          playerDelta[0] = block[0] - (players[clientPlayerID]["pos"][0] + 0.5)
+
+
+            players[clientPlayerID]["pos"] = [players[clientPlayerID]["pos"][0] + playerDelta[0], players[clientPlayerID]["pos"][1] + playerDelta[1]]
 
 
             # Changes camera position, with smoothness.
@@ -1507,9 +1507,24 @@ def main():
                 # Updates player information
                 sock.send(bytes("|0," + str(time.time()) + "," + str(clientPlayerID) + "," + simplePlayer(players[clientPlayerID]) + "|", "ascii"))
 
+                for update in wireAdds:
+                    wireUpdates.append("1," + ",".join(update))
+
+                for update in wireDeletes:
+                    wireUpdates.append("0," + ",".join(update))
+
+                if wireUpdates != []:
+                    sock.send(bytes("|2," + "*".join(wireUpdates) + "|", "ascii"))
+
+                wireAdds = []
+                wireDeletes = []
+                wireUpdates = []
+
                 # Sends block updates
                 for update in blockUpdates:
-                    sock.send(bytes("|1," + "," + ",".join(update) + "|", "ascii"))
+                    sock.send(bytes("|1," + ",".join(update) + "|", "ascii"))
+
+                    print("|1," + ",".join(update) + "|")
 
                 blockUpdates = []
 
@@ -1527,7 +1542,7 @@ def main():
 
                     if serverData[packet] == '':
                         continue
-                    elif serverData[packet][0] =="0":
+                    elif serverData[packet][0] == "0":
                         serverData[packet] = serverData[packet][2:]
                         serverData[packet] = serverData[packet].split("*")
 
@@ -1558,14 +1573,56 @@ def main():
 
                             block = block.split(",")
 
-                            if len(block) < 6:
+                            for char in block:
+                                if char == '':
+                                    block.remove(char)
+
+                            try:
+                                world[int(block[0])][int(block[1])] = {"type":int(block[2]), "state":int(block[3]), "rotation":int(block[4]), "health":int(block[5]), "special":block[6]}
+                            except:
+                                print(block)
+
+                    elif serverData[packet][0] == "2":
+                        serverData[packet] = serverData[packet][2:]
+                        serverData[packet] = serverData[packet].split("*")
+
+                        for wire in serverData[packet]:
+                            if wire == "":
+                                continue
+
+                            wire = wire.split(",")
+
+                            if len(wire) < 6:
+                                break
+
+                            if wire[0] == "0":
+                                #Wire removal
+                                wires.remove([[int(wire[1]), int(wire[2])], [int(wire[3]), int(wire[4]), int(wire[5])]])
+
+                            elif wire[0] == "1":
+                                wires.append([[int(wire[1]), int(wire[2])], [int(wire[3]), int(wire[4]), int(wire[5])]])
+
+                    elif serverData[packet][0] == "3":
+                        serverData[packet] = serverData[packet][2:]
+                        serverData[packet] = serverData[packet].split("*")
+
+                        for update in serverData[packet]:
+                            if update == "":
+                                continue
+
+                            block = block.split(",")
+
+                            if len(block) < 2:
                                 break
 
                             for char in block:
                                 if char == '':
                                     block.remove(char)
 
-                            world[int(block[0])][int(block[1])] = {"type":int(block[2]), "state":int(block[3]), "rotation":int(block[4]), "health":int(block[5])}
+                            if update[1] == "1":
+                                gameSequence = 1
+                                uiState = "inventory"
+                                heldWire = None
 
                 serverData = []
 
@@ -1580,6 +1637,9 @@ def main():
             # It renders the section of the world that's visible to the camera.
             # It only does so when ~1/120th of a second has passed.
             if time.time() - lastFrameTime > 0.006:
+                for player in range(len(players)):
+                    if player != clientPlayerID:
+                        players[player]["pos"] = [players[player]["pos"][0] + (time.time() - lastFrameTime) * playerSpeed * players[player]["delta"][0] * 10, players[player]["pos"][1] + (time.time() - lastFrameTime) * playerSpeed * players[player]["delta"][1] * 10]
 
 
                 #This makes it so the camera does not go outside the world when it isn't zoomed out very far
@@ -1650,15 +1710,20 @@ def main():
                                 continue
 
                             else:
+                                if (gameSequence == 0 and players[clientPlayerID]["team"] == 0 and row < worldSize[1] // 2) or (gameSequence == 0 and players[clientPlayerID]["team"] == 1 and row >= worldSize[1] // 2):
                              # Blit the corresponding sprite to the block type in the column and row in the relative position of the block on the screen.
-                                window.blit(blockSprites[world[column][row]["type"]][world[column][row]["state"]][world[column][row]["rotation"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)])
+                                    window.blit(blockSprites[world[column][row]["type"]][world[column][row]["state"]][world[column][row]["rotation"]], [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)])
 
-                                if world[column][row]["type"] != 0 and world[column][row]["health"] / blockData[world[column][row]["type"]]["health"] != 1:
-                                    healthSprite.fill([0, 0, 0, 64])
+                                    if world[column][row]["type"] != 0 and world[column][row]["health"] / blockData[world[column][row]["type"]]["health"] != 1:
+                                        healthSprite.fill([0, 0, 0, 64])
 
-                                    healthSprite.fill([0, 0, 0, 0], pygame.Rect([(healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / blockData[world[column][row]["type"]]["health"]), (healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / blockData[world[column][row]["type"]]["health"])], [healthSprite.get_width() * (world[column][row]["health"] / blockData[world[column][row]["type"]]["health"]), healthSprite.get_width() * (world[column][row]["health"] / blockData[world[column][row]["type"]]["health"])]))
+                                        healthSprite.fill([0, 0, 0, 0], pygame.Rect([(healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / blockData[world[column][row]["type"]]["health"]), (healthSprite.get_width() / 2) * (1 - world[column][row]["health"] / blockData[world[column][row]["type"]]["health"])], [healthSprite.get_width() * (world[column][row]["health"] / blockData[world[column][row]["type"]]["health"]), healthSprite.get_width() * (world[column][row]["health"] / blockData[world[column][row]["type"]]["health"])]))
 
-                                    window.blit(healthSprite, getScreenPos([column, row]))
+                                        window.blit(healthSprite, getScreenPos([column, row]))
+
+                                else:
+                                    window.blit(hiddenSprite, [(column - cameraPos[0] + (cameraZoom / 2)) * (scrW / cameraZoom), (row - cameraPos[1] + (cameraZoom * (scrH / scrW)) / 2) * (scrW / cameraZoom)])
+
 
 
                 # Displays the player's lasers, and plays sounds if they're firing.
@@ -1776,8 +1841,35 @@ def main():
 
                 ### EVERYTHING PAST THIS POINT IS UI ###
 
+                for wire in wires:
+                    if (wire[0][1] < worldSize[1] // 2 and players[clientPlayerID]["team"] == 0) or (wire[0][1] >= worldSize[1] // 2 and players[clientPlayerID]["team"] == 1):
+                        if blockData[world[wire[1][0]][wire[1][1]]["type"]]["wireable"] and blockData[world[wire[0][0]][wire[0][1]]["type"]]["wireable"]:
+                            if blockData[world[wire[1][0]][wire[1][1]]["type"]]["inputCount"] == 1:
+                                if world[wire[0][0]][wire[0][1]]["state"] == 0:
+                                    pygame.draw.line(window, [0, 0, 0], getScreenPos([wire[0][0] + 0.5, wire[0][1]]), getScreenPos([wire[1][0] + 0.5, wire[1][1] + 1]), 3)
+                                else:
+                                    pygame.draw.line(window, [232, 201, 71], getScreenPos([wire[0][0] + 0.5, wire[0][1]]), getScreenPos([wire[1][0] + 0.5, wire[1][1] + 1]), 3)
+
+                            elif blockData[world[wire[1][0]][wire[1][1]]["type"]]["inputCount"] == 2:
+                                if wire[1][2] == 0:
+                                    if world[wire[0][0]][wire[0][1]]["state"] == 0:
+                                        pygame.draw.line(window, [0, 0, 0], getScreenPos([wire[0][0] + 0.5, wire[0][1]]), getScreenPos([wire[1][0] + 0.33, wire[1][1] + 1]), 3)
+                                    else:
+                                        pygame.draw.line(window, [232, 201, 71], getScreenPos([wire[0][0] + 0.5, wire[0][1]]), getScreenPos([wire[1][0] + 0.33, wire[1][1] + 1]), 3)
+
+                                else:
+                                    if world[wire[0][0]][wire[0][1]]["state"] == 0:
+                                        pygame.draw.line(window, [0, 0, 0], getScreenPos([wire[0][0] + 0.5, wire[0][1]]), getScreenPos([wire[1][0] + 0.66, wire[1][1] + 1]), 3)
+                                    else:
+                                        pygame.draw.line(window, [232, 201, 71], getScreenPos([wire[0][0] + 0.5, wire[0][1]]), getScreenPos([wire[1][0] + 0.66, wire[1][1] + 1]), 3)
+
+                        else:
+                            wires.remove(wire)
+
 
                 if uiState == "inventory":
+
+                    window.blit(inventoryDisplayText, [0, 0])
 
                     if denyBlockPlacement:
                         window.blit(blockSelectionSprites[1], getScreenPos(spriteWorldPos))
@@ -1801,6 +1893,32 @@ def main():
 
 
                     window.blit(currentName, [(scrW * 15 / 16) - currentName.get_width() - 8, scrH / 2 + scrW / 32 + 30])
+
+                elif uiState == "wiring":
+                    for column in range(int(cameraPos[0] - (cameraZoom / 2)) - 1, int(cameraPos[0] + (cameraZoom / 2)) + 1): # Scans accross the world area of the world visible to the camera in columns
+                        if column < 0 or column >= worldSize[0]: # If the column is outside of the world, continue, because that would crash the program.
+                            continue
+                        else:
+                            for row in range(int(cameraPos[1] - ((cameraZoom * (scrH / scrW)) // 2)) - 1, int(cameraPos[1] + ((cameraZoom * (scrH / scrW)) // 2)) + 2): # Scans accross the world area of the world visible to the camera in rows
+                                if row < 0 or row >= worldSize[1]: # If the row is outside of the world, continue, because that would crash the program.
+                                    continue
+
+                                else:
+                                    if blockData[world[column][row]["type"]]["wireable"]:
+                                        pygame.draw.circle(window, [255, 0, 0], getScreenPos([column + 0.5, row]), 8)
+
+                                        if blockData[world[column][row]["type"]]["inputCount"] == 1:
+                                            pygame.draw.circle(window, [0, 0, 255], getScreenPos([column + 0.5, row + 1]), 8)
+
+                                        elif blockData[world[column][row]["type"]]["inputCount"] == 2:
+                                            pygame.draw.circle(window, [0, 0, 255], getScreenPos([column + 0.33, row + 1]), 8)
+                                            pygame.draw.circle(window, [0, 0, 255], getScreenPos([column + 0.67, row + 1]), 8)
+
+                    if heldWire != None:
+                        pygame.draw.line(window, [0, 0, 0], getScreenPos([heldWire[0] + 0.5, heldWire[1]]), mousePos, 3)
+
+
+                    window.blit(wiringDisplayText, [0, 0])
 
 
                 # Draws health and energy bar borders.

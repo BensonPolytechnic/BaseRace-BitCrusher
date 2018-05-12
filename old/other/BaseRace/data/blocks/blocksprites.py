@@ -41,12 +41,40 @@ def andGate(pixels, state):
         sprite.fill([192, 192, 192], pygame.Rect([pixels / 12, pixels / 2], [(5 * pixels) / 6, (pixels / 2) - (pixels / 12)]))
         pygame.draw.circle(sprite, [192, 192, 192], [int(pixels / 2), int(pixels / 2)], int((5 * pixels) / 12), 0)
         return sprite
+    
+    elif state == 1:
+        sprite = pygame.Surface([pixels, pixels]).convert()
+        sprite.fill([64, 64, 64])
+        sprite.fill([232, 201, 71], pygame.Rect([pixels / 12, pixels / 2], [(5 * pixels) / 6, (pixels / 2) - (pixels / 12)]))
+        pygame.draw.circle(sprite, [232, 201, 71], [int(pixels / 2), int(pixels / 2)], int((5 * pixels) / 12), 0)
+        return sprite
+
+def switch(pixels, state):
+    if state == 0:
+        sprite = pygame.Surface([pixels, pixels]).convert()
+        sprite.fill([64, 64, 64])
+        sprite.fill([192, 192, 192], pygame.Rect([pixels / 4, pixels / 4], [pixels / 2, pixels / 2]))
+        return sprite
+    
+    elif state == 1:
+        sprite = pygame.Surface([pixels, pixels]).convert()
+        sprite.fill([64, 64, 64])
+        sprite.fill([232, 201, 71], pygame.Rect([pixels / 4, pixels / 4], [pixels / 2, pixels / 2]))
+        return sprite
 
 def orGate(pixels, state):
     if state == 0:
         sprite = pygame.Surface([pixels, pixels]).convert()
         sprite.fill([64, 64, 64])
         pygame.draw.ellipse(sprite, [192, 192, 192], pygame.Rect([pixels / 12, pixels / 12], [(5 * pixels) / 6, (10 * pixels) / 6]), 0)
+        sprite.fill([64, 64, 64], pygame.Rect([0, (11 * pixels) / 12], [pixels, pixels / 6]))
+        pygame.draw.ellipse(sprite, [64, 64, 64], pygame.Rect([pixels / 12, (pixels * 9) / 12], [(5 * pixels) / 6, pixels / 3]), 0)
+        return sprite
+    
+    elif state == 1:
+        sprite = pygame.Surface([pixels, pixels]).convert()
+        sprite.fill([64, 64, 64])
+        pygame.draw.ellipse(sprite, [232, 201, 71], pygame.Rect([pixels / 12, pixels / 12], [(5 * pixels) / 6, (10 * pixels) / 6]), 0)
         sprite.fill([64, 64, 64], pygame.Rect([0, (11 * pixels) / 12], [pixels, pixels / 6]))
         pygame.draw.ellipse(sprite, [64, 64, 64], pygame.Rect([pixels / 12, (pixels * 9) / 12], [(5 * pixels) / 6, pixels / 3]), 0)
         return sprite
@@ -61,6 +89,16 @@ def xorGate(pixels, state):
         pygame.draw.ellipse(sprite, [192, 192, 192], pygame.Rect([pixels / 12, (pixels * 9) / 12], [(5 * pixels) / 6, pixels / 3]), 0)
         pygame.draw.ellipse(sprite, [64, 64, 64], pygame.Rect([pixels / 12, (pixels * 10) / 12], [(5 * pixels) / 6, pixels / 3]), 0)
         return sprite
+    
+    if state == 1:
+        sprite = pygame.Surface([pixels, pixels]).convert()
+        sprite.fill([64, 64, 64])
+        pygame.draw.ellipse(sprite, [232, 201, 71], pygame.Rect([pixels / 12, pixels / 12], [(5 * pixels) / 6, (9 * pixels) / 6]), 0)
+        sprite.fill([64, 64, 64], pygame.Rect([0, (10 * pixels) / 12], [pixels, pixels / 3]))
+        pygame.draw.ellipse(sprite, [64, 64, 64], pygame.Rect([pixels / 12, (pixels * 8) / 12], [(5 * pixels) / 6, pixels / 3]), 0)
+        pygame.draw.ellipse(sprite, [232, 201, 71], pygame.Rect([pixels / 12, (pixels * 9) / 12], [(5 * pixels) / 6, pixels / 3]), 0)
+        pygame.draw.ellipse(sprite, [64, 64, 64], pygame.Rect([pixels / 12, (pixels * 10) / 12], [(5 * pixels) / 6, pixels / 3]), 0)
+        return sprite
 
 def notGate(pixels, state):
     if state == 0:
@@ -68,6 +106,12 @@ def notGate(pixels, state):
         sprite.fill([64, 64, 64])
         pygame.draw.polygon(sprite, [192, 192, 192], [[pixels / 2, pixels / 6], [pixels / 12, (11 * pixels) / 12], [(11 * pixels) / 12, (11 * pixels) / 12]])
         pygame.draw.circle(sprite, [192, 192, 192], [int(pixels / 2), int(pixels / 6)], int(pixels / 12), 0)
+        return sprite
+    elif state == 1:
+        sprite = pygame.Surface([pixels, pixels]).convert()
+        sprite.fill([64, 64, 64])
+        pygame.draw.polygon(sprite, [232, 201, 71], [[pixels / 2, pixels / 6], [pixels / 12, (11 * pixels) / 12], [(11 * pixels) / 12, (11 * pixels) / 12]])
+        pygame.draw.circle(sprite, [232, 201, 71], [int(pixels / 2), int(pixels / 6)], int(pixels / 12), 0)
         return sprite
 
 def hidden(pixels):
@@ -103,3 +147,6 @@ def sprite(id, pixels, state):
     
     if id == 7:
         return notGate(pixels, state)
+    
+    if id == 8:
+        return switch(pixels, state)
