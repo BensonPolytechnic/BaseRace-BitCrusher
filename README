@@ -1,0 +1,29 @@
+C Server:
+Server Example for Python rendering losers, if you need help understanding, yell at me.
+
+A very simple server that sends a string over port 8888.
+There is no client yet, but you can use telnet. Open CMD and type 'telnet localhost 8888' if you're running it.
+I'm including a makefile, if you want to compile you need standard UNIX libraries and a C compiler.
+All of that is included in cygwin.
+
+A brief introduction to C things that you may not understand with a cursory glance:
+- The & symbol means a pointer to the whatever is after it, a pointer is a hexidecimal value to the memory address of a value.
+- The * symbol is a derefrencer, if you see it next to a value, that value is a pointer, and now the & is the value at the address.
+- Struct is kind of like a dictionary, but you can have a lot of different types of data in it.
+- The -> symbol is not a traditional C operator, but it just extracts a value from a pointer to a struct.
+- The . symbol is how to address values within a struct.
+- All the weird if statements is like Python's try else loop, it's error checking. The reason they're almost all < 0 is
+because UNIX libraries return -1 as an error code.
+
+The rest is regular logic stuff, you could google it. 
+
+How to Compile:
+- Have standard UNIX libs, should come with Cygwin, Linux on Windows, or a VM
+- run 'make' in the directory with the files, 'make clean' and 'make' to recompile.
+- run ownPracServ
+
+Python Client:
+The Python Client is a basic client that recieves the string from the Server.
+It uses the same port, 8888
+The socket lib is very easy to understand, and I assume you can run it.
+It requires no libs except for the standard python libs.
